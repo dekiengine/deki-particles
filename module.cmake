@@ -1,0 +1,10 @@
+# Module descriptor for deki-engine auto-discovery
+set(MODULE_DISPLAY_NAME "Particles")
+set(MODULE_PREFIX "DekiParticles")
+set(MODULE_UPPER "PARTICLES")
+set(MODULE_TARGET "deki-particles")
+set(MODULE_FILE_PREFIX "Particles")
+set(MODULE_ENTRY DekiParticlesModule.cpp)
+set(MODULE_LINK_DEPS deki-editor deki-rendering deki-2d)
+set(MODULE_NEEDS_IMGUI ON)
+set(MODULE_EXPORT_ALL_SYMBOLS OFF)

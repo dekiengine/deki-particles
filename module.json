@@ -1,0 +1,25 @@
+{
+  "id": "deki-particles",
+  "displayName": "Particles",
+  "buildDefine": "DEKI_MODULE_PARTICLES",
+  "requires": ["deki-rendering", "deki-2d"],
+  "features": [
+    {
+      "id": "particle-emitter",
+      "displayName": "Particle Emitter",
+      "buildDefine": "DEKI_FEATURE_PARTICLE_EMITTER",
+      "defaultEnabled": true,
+      "componentGuids": [
+        "b1e0e1a0-1111-4002-9002-000000000010",
+        "b1e0e1a0-1111-4003-9003-000000000011",
+        "b1e0e1a0-1111-4005-9005-000000000013",
+        "b1e0e1a0-1111-4006-9006-000000000014",
+        "b1e0e1a0-1111-4007-9007-000000000015",
+        "b1e0e1a0-1111-4008-9008-000000000016",
+        "b1e0e1a0-1111-4009-9009-000000000017",
+        "b1e0e1a0-1111-400a-900a-000000000018",
+        "b1e0e1a0-1111-400b-900b-000000000019"
+      ]
+    }
+  ]
+}
