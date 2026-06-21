@@ -98,7 +98,7 @@ int ParticleEmitterComponent::Spawn()
     int idx = pool.Spawn();
     if (idx < 0) return -1;
 
-    // Reset particle state for this slot.
+    // Reset particle state for this slot. All numeric state is float.
     pool.posX[idx] = 0.0f;
     pool.posY[idx] = 0.0f;
     pool.velX[idx] = 0.0f;
@@ -139,11 +139,13 @@ void ParticleEmitterComponent::Simulate(float dt)
     if (dt > 0.1f) dt = 0.1f;  // Clamp huge deltas (loading, paused, etc.) to avoid teleport.
 
     // Age + kill expired particles BEFORE driving simulation hooks. This way
-    // OnSimulate iterates only currently-alive particles.
+    // OnSimulate iterates only currently-alive particles. age/lifetime are
+    // float; convert dt once before the loop.
+    float dtN = static_cast<float>(dt);
     int n = pool.AliveCount();
     for (int i = 0; i < n; )
     {
-        pool.age[i] += dt;
+        pool.age[i] = ((pool.age[i]) + (dtN));
         if (pool.age[i] >= pool.lifetime[i])
         {
             pool.KillSwap(i);
@@ -163,10 +165,12 @@ void ParticleEmitterComponent::Simulate(float dt)
     int alive = pool.AliveCount();
     float* px = pool.posX; float* py = pool.posY;
     float* vx = pool.velX; float* vy = pool.velY;
+    // dtN was already converted from `dt` earlier in this function for the
+    // age-aging loop — reuse it here instead of redefining.
     for (int i = 0; i < alive; ++i)
     {
-        px[i] += vx[i] * dt;
-        py[i] += vy[i] * dt;
+        px[i] = ((px[i]) + (((vx[i]) * (dtN))));
+        py[i] = ((py[i]) + (((vy[i]) * (dtN))));
     }
 }
 
@@ -237,8 +241,8 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     float anchorX = 0.0f, anchorY = 0.0f;
     if (worldSpace && owner)
     {
-        anchorX = owner->GetWorldX();
-        anchorY = owner->GetWorldY();
+        anchorX = (owner->GetWorldX());
+        anchorY = (owner->GetWorldY());
     }
 
     const float spriteW = (float)spr->width;
@@ -246,14 +250,16 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     // Rotation expands AABB up to sqrt(2). 1.45 leaves a one-pixel guard band.
     constexpr float kRotPad = 1.45f;
 
-    // First pass: tight integer bbox over all alive particles.
+    // First pass: tight integer bbox over all alive particles. The rasterizer
+    // boundary uses float pixels; convert float positions/scale once per
+    // particle and stay in float for the bbox arithmetic.
     float minX =  1e9f, minY =  1e9f;
     float maxX = -1e9f, maxY = -1e9f;
     for (int i = 0; i < n; ++i)
     {
-        float lx = pool.posX[i] - anchorX;
-        float ly = pool.posY[i] - anchorY;
-        float s  = pool.HasScale() ? pool.scale[i] : 1.0f;
+        float lx = (pool.posX[i]) - anchorX;
+        float ly = (pool.posY[i]) - anchorY;
+        float s  = pool.HasScale() ? (pool.scale[i]) : 1.0f;
         float halfW = 0.5f * spriteW * s * kRotPad;
         float halfH = 0.5f * spriteH * s * kRotPad;
         if (lx - halfW < minX) minX = lx - halfW;
@@ -321,10 +327,11 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
 
     for (int i = 0; i < n; ++i)
     {
-        float lx = pool.posX[i] - anchorX - (float)bboxMinX;
-        float ly = pool.posY[i] - anchorY - (float)bboxMinY;
-        float s  = pool.HasScale() ? pool.scale[i] : 1.0f;
-        float r  = pool.HasRotation() ? pool.rotation[i] : 0.0f;
+        float lx = (pool.posX[i]) - anchorX - (float)bboxMinX;
+        float ly = (pool.posY[i]) - anchorY - (float)bboxMinY;
+        float s  = pool.HasScale() ? (pool.scale[i]) : 1.0f;
+        // rotation column is float radians; QuadBlit takes float radians.
+        float r  = pool.HasRotation() ? (pool.rotation[i]) : 0.0f;
         uint8_t tR = pool.HasTint() ? pool.tintR[i] : 255;
         uint8_t tG = pool.HasTint() ? pool.tintG[i] : 255;
         uint8_t tB = pool.HasTint() ? pool.tintB[i] : 255;

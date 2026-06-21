@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticleModifier.h"
+#include "DekiMath.h"
 
 /**
  * @brief Linear velocity damping. Phase 110 — runs after gravity so
@@ -15,7 +16,7 @@ public:
 
     DEKI_EXPORT
     DEKI_RANGE(0.0f, 20.0f)
-    float drag = 1.0f;       // 1/sec — at drag=1.0, particles lose ~63% of velocity per second
+    float drag = 1.0f;  // 1/sec — at drag=1.0, particles lose ~63% of velocity per second
 
     int  GetSimulationPhase() const override { return 110; }
     void OnSimulate(ParticleEmitterComponent& emitter, float dt) override;

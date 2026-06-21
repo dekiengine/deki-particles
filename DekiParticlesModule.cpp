@@ -28,9 +28,6 @@
 #include "ParticleSystem.h"
 #include "reflection/ComponentRegistry.h"
 #include "reflection/ComponentFactory.h"
-#ifdef DEKI_EDITOR
-#include "imgui.h"
-#endif
 
 #ifdef DEKI_EDITOR
 
@@ -101,12 +98,6 @@ DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
     ParticleSystem::GetInstance().ClearAll();
 }
 
-#ifdef DEKI_EDITOR
-DEKI_PLUGIN_API void DekiPlugin_SetImGuiContext(void* ctx)
-{
-    ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx));
-}
-#endif
 
 // =============================================================================
 // Module Feature API

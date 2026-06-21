@@ -9,9 +9,9 @@ void InitialRotationModifier::OnAttachToEmitter(ParticleEmitterComponent& emitte
 
 void InitialRotationModifier::OnEmit(ParticleEmitterComponent& emitter, int i)
 {
-    using namespace deki_particles;
-    emitter.pool.rotation[i]      = DegToRad(emitter.rng.NextFloatRange(rotationMin, rotationMax));
-    emitter.pool.rotationSpeed[i] = DegToRad(emitter.rng.NextFloatRange(spinSpeedMin, spinSpeedMax));
+    // rotation/rotationSpeed are radians (engine convention).
+    emitter.pool.rotation[i] = emitter.rng.NextFloatRange(rotationMin, rotationMax);
+    emitter.pool.rotationSpeed[i] = emitter.rng.NextFloatRange(spinSpeedMin, spinSpeedMax);
 }
 
 void InitialRotationModifier::OnSimulate(ParticleEmitterComponent& emitter, float dt)

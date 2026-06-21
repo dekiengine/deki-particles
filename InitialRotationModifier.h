@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticleModifier.h"
+#include "DekiMath.h"
 
 /**
  * @brief Sets a particle's initial rotation and rotation speed. Phase 10.
@@ -16,19 +17,23 @@ public:
     DEKI_COMPONENT(InitialRotationModifier, ParticleModifier, "Particles", "b1e0e1a0-1111-4006-9006-000000000014", "DEKI_FEATURE_PARTICLE_EMITTER")
 
     DEKI_EXPORT
-    DEKI_RANGE(-360.0f, 360.0f)
-    float rotationMin = 0.0f;          // degrees
+    DEKI_RANGE(-DekiMath::kTwoPi, DekiMath::kTwoPi)
+    DEKI_UNIT(Angle)
+    float rotationMin = 0.0f;          // radians
 
     DEKI_EXPORT
-    DEKI_RANGE(-360.0f, 360.0f)
+    DEKI_RANGE(-DekiMath::kTwoPi, DekiMath::kTwoPi)
+    DEKI_UNIT(Angle)
     float rotationMax = 0.0f;
 
     DEKI_EXPORT
-    DEKI_RANGE(-720.0f, 720.0f)
-    float spinSpeedMin = 0.0f;         // degrees per second
+    DEKI_RANGE(-2.0f * DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_UNIT(Angle)
+    float spinSpeedMin = 0.0f;         // radians per second
 
     DEKI_EXPORT
-    DEKI_RANGE(-720.0f, 720.0f)
+    DEKI_RANGE(-2.0f * DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_UNIT(Angle)
     float spinSpeedMax = 0.0f;
 
     int  GetSimulationPhase() const override { return 10; }

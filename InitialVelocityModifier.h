@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticleModifier.h"
+#include "DekiMath.h"
 
 /**
  * @brief Sets a particle's initial velocity from a polar speed/angle range. Phase 10.
@@ -21,12 +22,14 @@ public:
     float speedMax = 2.0f;            // m/s
 
     DEKI_EXPORT
-    DEKI_RANGE(-360.0f, 720.0f)
-    float angleMin = 0.0f;            // degrees, 0 = +X right, 90 = +Y up
+    DEKI_RANGE(-DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_UNIT(Angle)
+    float angleMin = 0.0f;            // radians, 0 = +X right, π/2 = +Y up
 
     DEKI_EXPORT
-    DEKI_RANGE(-360.0f, 720.0f)
-    float angleMax = 360.0f;
+    DEKI_RANGE(-DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_UNIT(Angle)
+    float angleMax = DekiMath::kTwoPi;
 
     int  GetSimulationPhase() const override { return 10; }
     void OnEmit(ParticleEmitterComponent& emitter, int i) override;

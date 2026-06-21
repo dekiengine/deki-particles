@@ -16,9 +16,10 @@ void EmissionModifier::OnEmit(ParticleEmitterComponent& emitter, int i)
     using namespace deki_particles;
 
     // 1. Lifetime — random in [min, max], clamped to a sane minimum.
-    float t = emitter.rng.NextFloat01();
-    float life = lifetimeMin + (lifetimeMax - lifetimeMin) * t;
-    if (life < 0.001f) life = 0.001f;
+    float tN = emitter.rng.NextFloat01();
+    float life = lifetimeMin + (lifetimeMax - lifetimeMin) * tN;
+    static const float kMinLife = 0.001f;
+    if (life < kMinLife) life = kMinLife;
     emitter.pool.lifetime[i] = life;
 
     // 2. Spawn position — sample the configured shape in emitter-local space,
@@ -32,18 +33,21 @@ void EmissionModifier::OnEmit(ParticleEmitterComponent& emitter, int i)
         case EmitterShapeKind::Circle:
         {
             // Uniform sample inside disc: r = R*sqrt(u), theta = 2pi*v.
+            // theta is in radians (engine convention).
             float u = emitter.rng.NextFloat01();
             float v = emitter.rng.NextFloat01();
             float r = radius * std::sqrt(u);
-            float theta = 6.2831853f * v;
-            ox = r * TrigLUT::Cos(theta);
-            oy = r * TrigLUT::Sin(theta);
+            float theta = v * DekiMath::kTwoPi;
+            ox = r * std::cos(theta);
+            oy = r * std::sin(theta);
             break;
         }
         case EmitterShapeKind::Rect:
         {
-            ox = (emitter.rng.NextFloat01() - 0.5f) * width;
-            oy = (emitter.rng.NextFloat01() - 0.5f) * height;
+            float rx = emitter.rng.NextFloat01() - 0.5f;
+            float ry = emitter.rng.NextFloat01() - 0.5f;
+            ox = rx * width;
+            oy = ry * height;
             break;
         }
     }
@@ -51,8 +55,8 @@ void EmissionModifier::OnEmit(ParticleEmitterComponent& emitter, int i)
     if (emitter.worldSpace && emitter.GetOwner())
     {
         DekiObject* o = emitter.GetOwner();
-        emitter.pool.posX[i] = o->GetWorldX() + ox;
-        emitter.pool.posY[i] = o->GetWorldY() + oy;
+        emitter.pool.posX[i] = ((o->GetWorldX()) + (ox));
+        emitter.pool.posY[i] = ((o->GetWorldY()) + (oy));
     }
     else
     {
@@ -63,13 +67,15 @@ void EmissionModifier::OnEmit(ParticleEmitterComponent& emitter, int i)
 
 void EmissionModifier::OnSimulate(ParticleEmitterComponent& emitter, float dt)
 {
+    float dtN = static_cast<float>(dt);
+
     // Continuous emission — accumulator-based so fractional rates work.
     if (emissionRate > 0.0f)
     {
-        m_RateAccumulator += emissionRate * dt;
+        m_RateAccumulator = ((m_RateAccumulator) + (((emissionRate) * (dtN))));
         while (m_RateAccumulator >= 1.0f)
         {
-            m_RateAccumulator -= 1.0f;
+            m_RateAccumulator = ((m_RateAccumulator) - (1.0f));
             if (emitter.Spawn() < 0)
             {
                 m_RateAccumulator = 0.0f;  // pool full, drop pending spawns
@@ -92,10 +98,10 @@ void EmissionModifier::OnSimulate(ParticleEmitterComponent& emitter, float dt)
         }
         else if (burstInterval > 0.0f)
         {
-            m_BurstTimer += dt;
+            m_BurstTimer = ((m_BurstTimer) + (dtN));
             while (m_BurstTimer >= burstInterval)
             {
-                m_BurstTimer -= burstInterval;
+                m_BurstTimer = ((m_BurstTimer) - (burstInterval));
                 for (int n = 0; n < burstCount; ++n)
                     if (emitter.Spawn() < 0) break;
             }

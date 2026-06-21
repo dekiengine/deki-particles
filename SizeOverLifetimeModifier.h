@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticleModifier.h"
+#include "DekiMath.h"
 
 /**
  * @brief Drives a particle's scale as a function of its normalized age.

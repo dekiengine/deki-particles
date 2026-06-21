@@ -1,12 +1,13 @@
 #include "InitialVelocityModifier.h"
 #include "ParticleEmitterComponent.h"
 #include "ParticleMath.h"
+#include <cmath>
 
 void InitialVelocityModifier::OnEmit(ParticleEmitterComponent& emitter, int i)
 {
-    using namespace deki_particles;
-    float spd = emitter.rng.NextFloatRange(speedMin, speedMax);
-    float ang = DegToRad(emitter.rng.NextFloatRange(angleMin, angleMax));
-    emitter.pool.velX[i] = spd * TrigLUT::Cos(ang);
-    emitter.pool.velY[i] = spd * TrigLUT::Sin(ang);
+    float speed = emitter.rng.NextFloatRange(speedMin, speedMax);
+    float angle = emitter.rng.NextFloatRange(angleMin, angleMax);
+    // Angle in radians (engine convention).
+    emitter.pool.velX[i] = speed * std::cos(angle);
+    emitter.pool.velY[i] = speed * std::sin(angle);
 }

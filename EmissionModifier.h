@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticleModifier.h"
+#include "DekiMath.h"
 
 enum class EmitterShapeKind : uint8_t
 {
@@ -42,7 +43,7 @@ public:
     DEKI_GROUP("Continuous")
     DEKI_EXPORT
     DEKI_RANGE(0, 1000)
-    float emissionRate = 20.0f;       // particles/second (0 = disable continuous)
+    float emissionRate = static_cast<float>(20.0f);  // particles/second (0 = disable continuous)
 
     // ---- Burst -------------------------------------------------------------
     DEKI_GROUP("Burst")
@@ -85,6 +86,7 @@ public:
     void OnSimulate(ParticleEmitterComponent& emitter, float dt) override;
 
 private:
+    // Per-frame accumulators stay float so the time math mode-portable.
     float m_RateAccumulator = 0.0f;
     float m_BurstTimer = 0.0f;
     bool  m_FiredFirstBurst = false;

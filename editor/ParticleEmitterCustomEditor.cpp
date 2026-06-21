@@ -19,7 +19,7 @@
 
 #include <deki-editor/EditorRegistry.h>
 #include <deki-editor/CustomEditor.h>
-#include <deki-editor/EditorGUI.h>
+#include <deki-editor/EditorUI.h>
 #include <deki-editor/PrefabView.h>
 #include "ParticleEmitterComponent.h"
 #include "ParticleModifier.h"
@@ -28,10 +28,11 @@
 #include "Prefab.h"
 #include "DekiTime.h"
 #include "reflection/ComponentRegistry.h"
-#include "imgui.h"
+// ImGui is provided transitively by <deki-editor/CustomEditor.h>
 #include <vector>
 #include <algorithm>
 #include <cstring>
+#include <cstdio>
 #include <cmath>
 #include <unordered_map>
 #include <chrono>
@@ -82,12 +83,12 @@ namespace
         return out;
     }
 
-    ImU32 PhaseBadgeColor(int phase)
+    uint32_t PhaseBadgeColor(int phase)
     {
-        if (phase < 10)  return IM_COL32(220, 150,  60, 255);  // EMIT (orange)
-        if (phase < 100) return IM_COL32(220, 200,  60, 255);  // INIT (yellow)
-        if (phase < 200) return IM_COL32( 60, 180, 220, 255);  // FORCE (cyan)
-        return                   IM_COL32(170, 120, 220, 255); // LIFE (purple)
+        if (phase < 10)  return EditorUI::Rgba(220, 150,  60);  // EMIT (orange)
+        if (phase < 100) return EditorUI::Rgba(220, 200,  60);  // INIT (yellow)
+        if (phase < 200) return EditorUI::Rgba( 60, 180, 220);  // FORCE (cyan)
+        return                  EditorUI::Rgba(170, 120, 220);  // LIFE (purple)
     }
     const char* PhaseLabel(int phase)
     {
@@ -99,17 +100,17 @@ namespace
 
     void DrawPhaseBadge(int phase)
     {
+        auto& ui = EditorUI::Get();
         const char* label = PhaseLabel(phase);
-        ImVec2 textSize = ImGui::CalcTextSize(label);
-        ImVec2 padding(6.0f, 2.0f);
-        ImVec2 size(textSize.x + padding.x * 2.0f, textSize.y + padding.y * 2.0f);
-        ImVec2 pos = ImGui::GetCursorScreenPos();
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y),
-                          PhaseBadgeColor(phase), 3.0f);
-        dl->AddText(ImVec2(pos.x + padding.x, pos.y + padding.y),
-                    IM_COL32(20, 20, 20, 255), label);
-        ImGui::Dummy(size);
+        float tw, th;
+        ui.MeasureText(label, &tw, &th);
+        const float padX = 6.0f, padY = 2.0f;
+        const float w = tw + padX * 2.0f, h = th + padY * 2.0f;
+        float px, py;
+        ui.GetCursorScreenPos(&px, &py);
+        ui.DrawRectFilled(px, py, px + w, py + h, PhaseBadgeColor(phase), 3.0f);
+        ui.DrawTextAt(0.0f, px + padX, py + padY, EditorUI::Rgba(20, 20, 20), label);
+        ui.Dummy(w, h);
     }
 
     bool HasEmissionSibling(DekiObject* owner)
@@ -164,7 +165,7 @@ public:
 
         DekiObject* owner = emitter->GetOwner();
         if (!owner) {
-            EditorGUI::Get().DrawDefaultInspector();
+            EditorUI::Get().DrawDefaultInspector();
             return;
         }
 
@@ -172,7 +173,7 @@ public:
         // — auto-add one the first time the inspector sees this emitter.
         EnsureEmissionExists(emitter, owner);
 
-        EditorGUI::Get().DrawDefaultInspector();
+        EditorUI::Get().DrawDefaultInspector();
         DrawPreviewSection(emitter);
         DrawModulesSection(emitter, owner);
     }
@@ -200,43 +201,43 @@ private:
 
     void DrawPreviewSection(ParticleEmitterComponent* emitter)
     {
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::TextDisabled("Preview");
-        ImGui::Spacing();
+        auto& ui = EditorUI::Get();
+        ui.Space();
+        ui.Separator();
+        ui.TextDisabled("Preview");
+        ui.Space();
 
-        // ImVec2(0, 0) → auto-width per button so the larger Lucide glyphs
-        // and any localized text fit without truncation.
+        // Auto-width buttons so the larger Lucide glyphs fit without truncation.
         const bool playing = emitter->IsEditorPreviewPlaying();
         const char* playLabel = playing ? LUCIDE_PAUSE " Pause" : LUCIDE_PLAY " Play";
-        if (ImGui::Button(playLabel))
+        if (ui.Button(playLabel))
             emitter->EditorPreviewSetPlaying(!playing);
-        ImGui::SameLine();
-        if (ImGui::Button(LUCIDE_STEP_FWD " Step"))
+        ui.SameLine();
+        if (ui.Button(LUCIDE_STEP_FWD " Step"))
             m_StepRequested[emitter] = true;
-        ImGui::SameLine();
-        if (ImGui::Button(LUCIDE_ROTATE_CCW " Restart"))
+        ui.SameLine();
+        if (ui.Button(LUCIDE_ROTATE_CCW " Restart"))
             emitter->EditorPreviewRestart();
-        ImGui::SameLine();
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextDisabled("%d / %d alive",
-                            emitter->pool.AliveCount(),
-                            emitter->pool.Capacity());
+        ui.SameLine();
+        ui.AlignTextToFramePadding();
+        char aliveBuf[64];
+        std::snprintf(aliveBuf, sizeof(aliveBuf), "%d / %d alive",
+                      emitter->pool.AliveCount(), emitter->pool.Capacity());
+        ui.TextDisabled(aliveBuf);
 
+        // Editor-only preview speed (not document state) -> low-level, no undo.
         float& speed = m_State[emitter].speed;
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Speed");
-        ImGui::SameLine(80.0f);
-        ImGui::SetNextItemWidth(-1);
-        ImGui::SliderFloat("##preview_speed", &speed, 0.0f, 4.0f, "%.2fx");
+        ui.PropertyRow("Speed");
+        ui.SliderFloat("##preview_speed", &speed, 0.0f, 4.0f, "%.2fx");
     }
 
     void DrawModulesSection(ParticleEmitterComponent* emitter, DekiObject* owner)
     {
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::TextDisabled("Modules");
-        ImGui::Spacing();
+        auto& ui = EditorUI::Get();
+        ui.Space();
+        ui.Separator();
+        ui.TextDisabled("Modules");
+        ui.Space();
 
         std::vector<ParticleModifier*> mods;
         for (auto* c : owner->GetComponents())
@@ -251,7 +252,7 @@ private:
             });
 
         DrawModulesList(emitter, owner, mods);
-        ImGui::Spacing();
+        ui.Space();
         DrawAddModuleButton(emitter, owner);
     }
 
@@ -264,6 +265,7 @@ private:
         ParticleModifier* swapA = nullptr;
         ParticleModifier* swapB = nullptr;
 
+        auto& ui = EditorUI::Get();
         for (size_t i = 0; i < mods.size(); ++i)
         {
             ParticleModifier* m = mods[i];
@@ -272,61 +274,62 @@ private:
             std::string label = PrettyModifierName(meta ? meta->name : "Modifier");
             const bool isEmission = (m->getType() == emissionType);
 
-            ImGui::PushID(m);
+            ui.PushID(m);
 
             // Enable checkbox — emission cannot be disabled (it's required).
-            if (isEmission) ImGui::BeginDisabled();
-            ImGui::Checkbox("##enabled", &m->enabled);
+            if (isEmission) ui.BeginDisabled();
+            ui.Checkbox("##enabled", &m->enabled);
             if (isEmission) {
                 m->enabled = true;
-                ImGui::EndDisabled();
+                ui.EndDisabled();
             }
 
-            ImGui::SameLine();
+            ui.SameLine();
             DrawPhaseBadge(phase);
 
-            ImGui::SameLine();
-            if (!m->enabled) ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(140, 140, 140, 255));
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label.c_str());
-            if (!m->enabled) ImGui::PopStyleColor();
+            ui.SameLine();
+            if (!m->enabled) ui.PushStyleColor(EditorUI::Col::Text, EditorUI::Rgba(140, 140, 140));
+            ui.AlignTextToFramePadding();
+            ui.Text(label.c_str());
+            if (!m->enabled) ui.PopStyleColor();
 
-            // Right-align the per-row controls. SmallButton width is
-            // CalcTextSize(label).x + FramePadding.x * 2; spacing between
-            // SameLine items is ItemInnerSpacing.x. Compute from actual font
-            // metrics so Lucide glyph size doesn't matter.
-            const ImGuiStyle& style = ImGui::GetStyle();
+            // Right-align the per-row controls, computed from actual font metrics
+            // so the Lucide glyph size doesn't matter.
+            float fpx, fpy;  ui.GetFramePadding(&fpx, &fpy);
+            float ispx, ispy; ui.GetItemSpacing(&ispx, &ispy);
             auto smallBtnW = [&](const char* lbl) {
-                return ImGui::CalcTextSize(lbl).x + style.FramePadding.x * 2.0f;
+                float w, h; ui.MeasureText(lbl, &w, &h);
+                return w + fpx * 2.0f;
             };
             float controlsWidth = smallBtnW(LUCIDE_CHEVRON_UP)
                                 + smallBtnW(LUCIDE_CHEVRON_DN)
                                 + smallBtnW(LUCIDE_TRASH)
-                                + style.ItemSpacing.x * 2.0f;
-            ImGui::SameLine(ImGui::GetContentRegionMax().x - controlsWidth);
+                                + ispx * 2.0f;
+            float crmx, crmy; ui.GetContentRegionMax(&crmx, &crmy);
+            ui.SameLine(crmx - controlsWidth);
 
             ParticleModifier* prevSamePhase = SamePhaseNeighbor(mods, i, -1, phase);
-            if (!prevSamePhase) ImGui::BeginDisabled();
-            if (ImGui::SmallButton(LUCIDE_CHEVRON_UP)) { swapA = m; swapB = prevSamePhase; }
-            if (!prevSamePhase) ImGui::EndDisabled();
+            if (!prevSamePhase) ui.BeginDisabled();
+            if (ui.SmallButton(LUCIDE_CHEVRON_UP)) { swapA = m; swapB = prevSamePhase; }
+            if (!prevSamePhase) ui.EndDisabled();
 
-            ImGui::SameLine();
+            ui.SameLine();
             ParticleModifier* nextSamePhase = SamePhaseNeighbor(mods, i, +1, phase);
-            if (!nextSamePhase) ImGui::BeginDisabled();
-            if (ImGui::SmallButton(LUCIDE_CHEVRON_DN)) { swapA = m; swapB = nextSamePhase; }
-            if (!nextSamePhase) ImGui::EndDisabled();
+            if (!nextSamePhase) ui.BeginDisabled();
+            if (ui.SmallButton(LUCIDE_CHEVRON_DN)) { swapA = m; swapB = nextSamePhase; }
+            if (!nextSamePhase) ui.EndDisabled();
 
-            ImGui::SameLine();
+            ui.SameLine();
             // Emission cannot be removed — without it the system spawns nothing.
-            if (isEmission) ImGui::BeginDisabled();
-            if (ImGui::SmallButton(LUCIDE_TRASH))
+            if (isEmission) ui.BeginDisabled();
+            if (ui.SmallButton(LUCIDE_TRASH))
                 toRemove = m;
-            if (isEmission) ImGui::EndDisabled();
+            if (isEmission) ui.EndDisabled();
 
-            if (isEmission && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("Emission is required and cannot be removed");
+            if (isEmission && ui.IsItemHovered(true))
+                ui.SetTooltip("Emission is required and cannot be removed");
 
-            ImGui::PopID();
+            ui.PopID();
         }
 
         if (swapA && swapB)
@@ -388,8 +391,6 @@ public:
         if (!em) return;
 
         auto& view = PrefabView::Get();
-        ImDrawList* dl = view.GetDrawList();
-        if (!dl) return;
 
         const float cx = view.GetScreenX();
         const float cy = view.GetScreenY();
@@ -398,22 +399,22 @@ public:
         // GetWorldToScreenScale so they match the rendered emission area.
         const float zoom        = view.GetZoom();
         const float worldToPx   = view.GetWorldToScreenScale();
-        const ImU32 color = IM_COL32(255, 200, 60, 220);
+        const uint32_t color = PrefabView::Rgba(255, 200, 60, 220);
 
         switch (em->shape)
         {
             case EmitterShapeKind::Point:
             {
                 const float k = 6.0f * zoom;
-                dl->AddLine(ImVec2(cx - k, cy), ImVec2(cx + k, cy), color, 1.0f);
-                dl->AddLine(ImVec2(cx, cy - k), ImVec2(cx, cy + k), color, 1.0f);
+                view.DrawLine(cx - k, cy, cx + k, cy, color, 1.0f);
+                view.DrawLine(cx, cy - k, cx, cy + k, color, 1.0f);
                 break;
             }
             case EmitterShapeKind::Circle:
             {
                 const float r = em->radius * worldToPx;
                 if (r > 0.5f)
-                    dl->AddCircle(ImVec2(cx, cy), r, color, 0, 1.0f);
+                    view.DrawCircle(cx, cy, r, color, 1.0f);
                 break;
             }
             case EmitterShapeKind::Rect:
@@ -421,9 +422,7 @@ public:
                 const float halfW = 0.5f * em->width  * worldToPx;
                 const float halfH = 0.5f * em->height * worldToPx;
                 if (halfW > 0.5f && halfH > 0.5f)
-                    dl->AddRect(ImVec2(cx - halfW, cy - halfH),
-                                ImVec2(cx + halfW, cy + halfH),
-                                color, 0.0f, 0, 1.0f);
+                    view.DrawRect(cx - halfW, cy - halfH, cx + halfW, cy + halfH, color, 1.0f);
                 break;
             }
         }
@@ -432,10 +431,11 @@ public:
 private:
     void DrawAddModuleButton(ParticleEmitterComponent* emitter, DekiObject* owner)
     {
-        if (ImGui::Button(LUCIDE_PLUS " Add Module", ImVec2(-1, 0)))
-            ImGui::OpenPopup("##add_particle_module");
+        auto& ui = EditorUI::Get();
+        if (ui.Button(LUCIDE_PLUS " Add Module", -1, 0))
+            ui.OpenPopup("##add_particle_module");
 
-        if (ImGui::BeginPopup("##add_particle_module"))
+        if (ui.BeginPopup("##add_particle_module"))
         {
             struct Entry { const DekiComponentMeta* meta; int phase; };
             std::vector<Entry> entries;
@@ -458,7 +458,7 @@ private:
 
             if (entries.empty())
             {
-                ImGui::TextDisabled("(no modifier types registered)");
+                ui.TextDisabled("(no modifier types registered)");
             }
             else
             {
@@ -468,12 +468,12 @@ private:
                     int bucket = (e.phase < 10) ? 0 : (e.phase < 100) ? 1 : (e.phase < 200) ? 2 : 3;
                     if (bucket != lastBucket)
                     {
-                        if (lastBucket >= 0) ImGui::Separator();
-                        ImGui::TextDisabled("%s", PhaseLabel(e.phase));
+                        if (lastBucket >= 0) ui.Separator();
+                        ui.TextDisabled(PhaseLabel(e.phase));
                         lastBucket = bucket;
                     }
                     std::string pretty = PrettyModifierName(e.meta->name);
-                    if (ImGui::MenuItem(pretty.c_str()))
+                    if (ui.MenuItem(pretty.c_str()))
                     {
                         owner->AddComponent(e.meta->serializedName);
                         emitter->RefreshModifiers();
@@ -482,7 +482,7 @@ private:
                     }
                 }
             }
-            ImGui::EndPopup();
+            ui.EndPopup();
         }
     }
 };

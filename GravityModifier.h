@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParticleModifier.h"
+#include "DekiMath.h"
 
 /**
  * @brief Adds a constant acceleration to each particle's velocity. Phase 100.
@@ -22,7 +23,7 @@ public:
     DEKI_EXPORT
     DEKI_RANGE(-100.0f, 100.0f)
     DEKI_UNIT(Acceleration)
-    float gravityY = -9.8f;         // m/s^2 (world Y+ is up; gravity pulls down)
+    float gravityY = static_cast<float>(-9.8f);    // m/s^2 (world Y+ is up; gravity pulls down)
 
     int  GetSimulationPhase() const override { return 100; }
     void OnSimulate(ParticleEmitterComponent& emitter, float dt) override;

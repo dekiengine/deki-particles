@@ -9,18 +9,23 @@ void RotationOverLifetimeModifier::OnAttachToEmitter(ParticleEmitterComponent& e
 
 void RotationOverLifetimeModifier::OnSimulate(ParticleEmitterComponent& emitter, float dt)
 {
-    using namespace deki_particles;
     int n = emitter.pool.AliveCount();
-    float a0 = DegToRad(spinSpeedAt0);
-    float a1 = DegToRad(spinSpeedAt1);
-    float* age = emitter.pool.age;
+    // rotation column is float radians (engine convention); speeds are
+    // radians/sec, so integration is a simple unit-agnostic accumulate.
+    float a0 = spinSpeedAt0;
+    float a1 = spinSpeedAt1;
+    float da = ((a1) - (a0));
+    float dtN = static_cast<float>(dt);
+    float* age  = emitter.pool.age;
     float* life = emitter.pool.lifetime;
-    float* rot = emitter.pool.rotation;
+    float* rot  = emitter.pool.rotation;
     for (int i = 0; i < n; ++i)
     {
-        float t = (life[i] > 0.0f) ? (age[i] / life[i]) : 0.0f;
+        float t = (life[i] > 0.0f)
+            ? ((age[i]) / (life[i]))
+            : 0.0f;
         if (t > 1.0f) t = 1.0f;
-        float spd = a0 + (a1 - a0) * t;
-        rot[i] += spd * dt;
+        float spd = ((a0) + (((da) * (t))));
+        rot[i] = ((rot[i]) + (((spd) * (dtN))));
     }
 }

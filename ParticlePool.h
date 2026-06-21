@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include "DekiMath.h"
 
 namespace deki_particles {
 
@@ -37,6 +38,7 @@ public:
         m_AliveCount = 0;
         if (newCapacity <= 0) return;
 
+        // Time columns (age/lifetime) are seconds; spatial columns are meters.
         posX = new float[newCapacity]{};
         posY = new float[newCapacity]{};
         velX = new float[newCapacity]{};
@@ -113,7 +115,8 @@ public:
     bool HasScale() const    { return m_HasScale; }
     bool HasTint() const     { return m_HasTint; }
 
-    // Always-present columns (public for tight inner loops).
+    // Always-present columns (public for tight inner loops). Spatial columns
+    // in meters, time columns (age/lifetime) in seconds.
     float* posX = nullptr;
     float* posY = nullptr;
     float* velX = nullptr;
@@ -122,13 +125,14 @@ public:
     float* lifetime = nullptr;
 
     // Optional columns (nullptr until corresponding Ensure* called).
+    // rotation is in radians (engine convention).
     float* rotation = nullptr;        // radians
     float* rotationSpeed = nullptr;   // radians/sec
     float* scale = nullptr;
-    uint8_t* tintR = nullptr;
-    uint8_t* tintG = nullptr;
-    uint8_t* tintB = nullptr;
-    uint8_t* tintA = nullptr;
+    uint8_t*    tintR = nullptr;
+    uint8_t*    tintG = nullptr;
+    uint8_t*    tintB = nullptr;
+    uint8_t*    tintA = nullptr;
 
 private:
     int  m_Capacity = 0;
