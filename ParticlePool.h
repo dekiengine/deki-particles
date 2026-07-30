@@ -15,9 +15,9 @@ namespace deki_particles {
  * Optional shared columns (allocated on first use via Ensure*):
  *   rotation, rotationSpeed, scale, tintR, tintG, tintB, tintA
  *
- * Modifiers needing private per-particle data should hold their own
- * std::vector<T> sized to capacity in OnAttachToEmitter — keeping pool
- * extension reserved for shared state read by the render path.
+ * Modifiers needing private per-particle data should allocate it in their
+ * onAttach, out of the per-emitter state blob — keeping pool extension
+ * reserved for shared state read by the render path.
  *
  * Death uses swap-with-last-alive: O(1), keeps [0, aliveCount) dense.
  */

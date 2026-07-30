@@ -1,5 +1,5 @@
 #include "ParticleEmitterComponent.h"
-#include "ParticleModifier.h"
+#include "ParticleNodes.h"
 #include "ParticleSystem.h"
 #include "DekiObject.h"
 #include "DekiTime.h"
@@ -7,7 +7,6 @@
 #include "deki-2d/Texture2D.h"
 #include "deki-rendering/QuadBlit.h"
 #include "DekiEngine.h"  // for DekiColorFormat enum
-#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <cstdint>
@@ -22,6 +21,7 @@ ParticleEmitterComponent::~ParticleEmitterComponent()
 {
     ParticleSystem::GetInstance().UnregisterEmitter(this);
     FreeBboxBuf();
+    FreeChain();
 }
 
 void ParticleEmitterComponent::Awake()
@@ -37,17 +37,16 @@ void ParticleEmitterComponent::Start()
 void ParticleEmitterComponent::EnsureReady()
 {
     EnsurePoolAllocated();
-    if (m_ModifiersAttached) return;
+    if (m_ChainAttached) return;
 
-    RefreshModifiers();
-    if (m_OnSimulate.empty()) return;  // No siblings yet — try again next tick.
+    if (!RebuildChain())
+        return;  // No graph loaded yet — try again next tick.
 
     // Give every modifier a chance to allocate its private state and request
-    // pool extension columns now that capacity is known. Same set is shared
-    // between m_OnSimulate and m_OnEmit, so iterate one to avoid double-attach.
-    for (auto* m : m_OnSimulate)
-        m->OnAttachToEmitter(*this);
-    m_ModifiersAttached = true;
+    // pool extension columns now that capacity is known.
+    for (const ParticleChainEntry& e : m_Chain)
+        if (e.ops->onAttach) e.ops->onAttach(e.data, e.state, *this);
+    m_ChainAttached = true;
 }
 
 void ParticleEmitterComponent::EnsurePoolAllocated()
@@ -58,40 +57,44 @@ void ParticleEmitterComponent::EnsurePoolAllocated()
     m_PoolAllocated = true;
 }
 
-void ParticleEmitterComponent::RefreshModifiers()
+void ParticleEmitterComponent::FreeChain()
 {
-    m_OnEmit.clear();
-    m_OnSimulate.clear();
-
-    DekiObject* owner = GetOwner();
-    if (!owner) return;
-
-    // Collect every sibling ParticleModifier. We can't query by base type
-    // directly with GetComponent<>, so iterate all components and dynamic_cast.
-    // Modifier counts are tiny (< ~20) so this is cheap.
-    auto& comps = owner->GetComponents();
-    std::vector<ParticleModifier*> all;
-    all.reserve(comps.size());
-    for (auto* c : comps)
-    {
-        if (auto* m = dynamic_cast<ParticleModifier*>(c))
-            all.push_back(m);
-    }
-
-    std::stable_sort(all.begin(), all.end(),
-        [](ParticleModifier* a, ParticleModifier* b) {
-            int pa = a->GetSimulationPhase();
-            int pb = b->GetSimulationPhase();
-            if (pa != pb) return pa < pb;
-            return a->order < b->order;
-        });
-
-    // Same list reused for emit and simulate hook order (phase ordering
-    // applies identically). If a modifier wants to opt out of one hook it
-    // simply leaves the default empty body.
-    m_OnEmit = all;
-    m_OnSimulate = all;
+    FreeParticleChain(m_Chain);
 }
+
+bool ParticleEmitterComponent::RebuildChain()
+{
+    FreeChain();
+
+    ParticleGraph* g = graph.Get();
+    if (!g || !g->data)
+        return false;   // Not loaded yet. Not an error: assets resolve later.
+
+    const char* error = nullptr;
+    if (BuildParticleChain(g->data->Root(),
+                           DekiHashString(ParticleEmitNode::StaticNodeName),
+                           m_Chain, &error))
+        return true;
+
+    if (error && !m_LoggedBadGraph)
+    {
+        DEKI_LOG_ERROR("ParticleEmitterComponent: %s", error);
+        m_LoggedBadGraph = true;
+    }
+    return false;
+}
+
+#ifdef DEKI_EDITOR
+void ParticleEmitterComponent::AdoptChain(std::vector<ParticleChainEntry>&& chain)
+{
+    FreeChain();
+    m_Chain = std::move(chain);
+    EnsurePoolAllocated();
+    for (const ParticleChainEntry& e : m_Chain)
+        if (e.ops->onAttach) e.ops->onAttach(e.data, e.state, *this);
+    m_ChainAttached = true;
+}
+#endif
 
 int ParticleEmitterComponent::Spawn()
 {
@@ -109,12 +112,15 @@ int ParticleEmitterComponent::Spawn()
     if (pool.HasScale())         { pool.scale[idx] = 1.0f; }
     if (pool.HasTint())          { pool.tintR[idx] = 255; pool.tintG[idx] = 255; pool.tintB[idx] = 255; pool.tintA[idx] = 255; }
 
-    // Drive OnEmit through every ENABLED modifier in phase order.
-    // EmissionModifier (phase 0) is the typical caller; spawn-time setters
-    // (phase 10+) read EmissionModifier-set lifetime and write initial
-    // pos/vel/rot/etc.
-    for (auto* m : m_OnEmit)
-        if (m->enabled) m->OnEmit(*this, idx);
+    // Drive onEmit through every ENABLED modifier in chain order. The
+    // Emission node is the typical caller; the spawn-time setters wired after
+    // it read the lifetime it set and write initial pos/vel/rot.
+    for (const ParticleChainEntry& e : m_Chain)
+    {
+        if (!e.ops->onEmit) continue;
+        if (e.ops->isEnabled && !e.ops->isEnabled(e.data)) continue;
+        e.ops->onEmit(e.data, e.state, *this, idx);
+    }
 
     return idx;
 }
@@ -132,7 +138,7 @@ void ParticleEmitterComponent::Simulate(float dt)
     // the lifecycle).
     EnsureReady();
 
-    if (m_OnSimulate.empty())
+    if (m_Chain.empty())
         return;
 
     if (dt <= 0.0f) return;
@@ -155,8 +161,12 @@ void ParticleEmitterComponent::Simulate(float dt)
         ++i;
     }
 
-    for (auto* m : m_OnSimulate)
-        if (m->enabled) m->OnSimulate(*this, dt);
+    for (const ParticleChainEntry& e : m_Chain)
+    {
+        if (!e.ops->onSimulate) continue;
+        if (e.ops->isEnabled && !e.ops->isEnabled(e.data)) continue;
+        e.ops->onSimulate(e.data, e.state, *this, dt);
+    }
 
     // Final kinematic integration (pos += vel * dt) — runs once after all
     // force modifiers have mutated velocity. Always happens, even with no
@@ -185,10 +195,12 @@ void ParticleEmitterComponent::EditorPreviewRestart()
         while (pool.AliveCount() > 0)
             pool.KillSwap(pool.AliveCount() - 1);
     }
-    // Re-run OnAttachToEmitter on every modifier so per-modifier sim state
-    // (EmissionModifier's burst latch, rate accumulator, etc.) resets cleanly.
-    // Clear the attach flag so EnsureReady re-runs the attach pass.
-    m_ModifiersAttached = false;
+    // Rebuild the chain from the currently loaded graph, so every modifier's
+    // state blob starts over (the burst latch, the rate accumulator) and a
+    // reimported graph asset takes effect. Clearing the attach flag makes
+    // EnsureReady re-run the whole pass.
+    m_ChainAttached = false;
+    m_LoggedBadGraph = false;
     EnsureReady();
 }
 #endif
@@ -197,8 +209,17 @@ void ParticleEmitterComponent::UnloadAssets()
 {
     sprite.ptr = nullptr;
     sprite.loadAttempted = false;
+
+    // The chain points INTO the graph asset's node instances, so it cannot
+    // outlive the asset. Drop it before releasing the reference.
+    FreeChain();
+    m_ChainAttached = false;
+    graph.ptr = nullptr;
+    graph.loadAttempted = false;
+
     FreeBboxBuf();
     m_LoggedMissingSprite = false;
+    m_LoggedBadGraph = false;
 }
 
 void ParticleEmitterComponent::FreeBboxBuf()

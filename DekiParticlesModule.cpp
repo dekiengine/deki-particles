@@ -3,31 +3,25 @@
  * @brief Module entry point for deki-particles DLL
  *
  * Exports the standard Deki plugin interface so the editor can load
- * deki-particles.dll and register its components — the emitter plus all
- * built-in modifiers (Emission, Shape, InitialVelocity, InitialRotation,
- * Gravity, Drag, RotationOverLifetime, SizeOverLifetime, ColorOverLifetime).
+ * deki-particles.dll and register its one component (the emitter) plus the
+ * particle-graph node vocabulary: the Emitter entry and the built-in modifier
+ * nodes (Emission, Initial Velocity, Initial Rotation, Gravity, Drag, and the
+ * Size / Color / Rotation over Lifetime trio).
  *
- * External particle modules ship the same way: declare a DEKI_COMPONENT
- * subclass of ParticleModifier, list it in your own module.json features,
- * and the emitter discovers it automatically via dynamic_cast on its
- * sibling components — no changes to deki-particles required.
+ * External particle modules ship modifiers the same way: declare a DEKI_NODE
+ * struct in a category starting "Particles/", register its ParticleModifierOps
+ * with REGISTER_PARTICLE_MODIFIER, and register the node type from your own
+ * module entry. No changes to deki-particles required.
  */
 
 #include "interop/DekiPlugin.h"
 #include "DekiModuleFeatureMeta.h"
 #include "ParticleEmitterComponent.h"
-#include "ParticleModifier.h"
-#include "EmissionModifier.h"
-#include "InitialVelocityModifier.h"
-#include "InitialRotationModifier.h"
-#include "GravityModifier.h"
-#include "DragModifier.h"
-#include "RotationOverLifetimeModifier.h"
-#include "SizeOverLifetimeModifier.h"
-#include "ColorOverLifetimeModifier.h"
+#include "ParticleNodes.h"
 #include "ParticleSystem.h"
 #include "reflection/ComponentRegistry.h"
 #include "reflection/ComponentFactory.h"
+#include "deki-nodegraph/DekiNode.h"   // NodeFactory + NodeTypeRegistry (editor)
 
 #ifdef DEKI_EDITOR
 
@@ -35,9 +29,52 @@ extern void DekiParticles_RegisterComponents();
 extern int  DekiParticles_GetAutoComponentCount();
 extern const DekiComponentMeta* DekiParticles_GetAutoComponentMeta(int index);
 
+// Defined in editor/ParticleGraphEditor.cpp (re-registers the graph domain).
+extern "C" void DekiParticles_RegisterEditorGraphDomain(void);
+
 static bool s_ParticlesRegistered = false;
 
+namespace
+{
+    // Re-runnable mirror of the generated REGISTER_RUNTIME_NODE/REGISTER_NODE
+    // static registrars. Those run once at DLL load; the editor's plugin-only
+    // hot reload wipes the shared node registries WITHOUT unloading this
+    // module, so registration must be repeatable on demand. NodeFactory
+    // overwrites by typeId and NodeTypeRegistry dedupes, so this is idempotent.
+    template<typename T>
+    void RegisterParticleNodeType()
+    {
+        PrefabFormat::NodeFactory::Instance().Register(
+            DekiHashString(T::StaticNodeName),
+            []() -> void* { return new T(); },
+            [](void* p, PrefabFormat::PrefabMsgPackParser& parser, uint32_t mapSize) -> bool {
+                return DeserializeMsgPack(*static_cast<T*>(p), parser, mapSize); },
+            [](void* p) { delete static_cast<T*>(p); });
+        NodeTypeRegistry::Instance().Register(&T::GetNodeMeta(), sizeof(DekiNodeMeta));
+    }
+}
+
 extern "C" {
+
+/**
+ * @brief (Re-)register this module's node graph types: modifier node
+ * factories, editor metas, and the Particles graph domain. Called at module
+ * load via DekiPlugin_RegisterComponents and again after any registry wipe
+ * that keeps this DLL loaded (plugin-only hot reload).
+ */
+DEKI_PARTICLES_API void DekiParticles_RegisterGraphTypes(void)
+{
+    RegisterParticleNodeType<ParticleEmitNode>();
+    RegisterParticleNodeType<ParticleEmissionNode>();
+    RegisterParticleNodeType<ParticleInitialVelocityNode>();
+    RegisterParticleNodeType<ParticleInitialRotationNode>();
+    RegisterParticleNodeType<ParticleGravityNode>();
+    RegisterParticleNodeType<ParticleDragNode>();
+    RegisterParticleNodeType<ParticleSizeOverLifetimeNode>();
+    RegisterParticleNodeType<ParticleColorOverLifetimeNode>();
+    RegisterParticleNodeType<ParticleRotationOverLifetimeNode>();
+    DekiParticles_RegisterEditorGraphDomain();
+}
 
 DEKI_PARTICLES_API int DekiParticles_EnsureRegistered(void)
 {
@@ -91,6 +128,10 @@ DEKI_PLUGIN_API const DekiComponentMeta* DekiPlugin_GetComponentMeta(int index)
 DEKI_PLUGIN_API void DekiPlugin_RegisterComponents(void)
 {
     DekiParticles_EnsureRegistered();
+    // Deliberately OUTSIDE the s_ParticlesRegistered latch: node registries
+    // are wiped on every hot reload (full or plugin-only) and this export is
+    // the re-registration path for the plugin-only case.
+    DekiParticles_RegisterGraphTypes();
 }
 
 DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
@@ -103,22 +144,15 @@ DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
 // Module Feature API
 // =============================================================================
 
+// One component now: the modifiers are graph node types, not components.
 static const char* s_ParticleGuids[] = {
     ParticleEmitterComponent::StaticGuid,
-    EmissionModifier::StaticGuid,
-    InitialVelocityModifier::StaticGuid,
-    InitialRotationModifier::StaticGuid,
-    GravityModifier::StaticGuid,
-    DragModifier::StaticGuid,
-    RotationOverLifetimeModifier::StaticGuid,
-    SizeOverLifetimeModifier::StaticGuid,
-    ColorOverLifetimeModifier::StaticGuid,
 };
 
 static const DekiModuleFeatureInfo s_Features[] = {
     {
         "particle-emitter", "Particle Emitter",
-        "Modular particle system: emitter plus built-in behavior modifiers",
+        "Particle system: an emitter driven by a graph of behavior modifiers",
         true, "DEKI_FEATURE_PARTICLE_EMITTER",
         s_ParticleGuids,
         sizeof(s_ParticleGuids) / sizeof(s_ParticleGuids[0])

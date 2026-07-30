@@ -1,10 +1,10 @@
 #pragma once
 
-// Tiny header that defines only DEKI_PARTICLES_API. Component headers include
+// Tiny header that defines only DEKI_PARTICLES_API. Module headers include
 // this instead of DekiParticlesModule.h to avoid a circular include
 // (DekiParticlesModule.h is the umbrella include for external consumers and
-// pulls in every component header — including it from a component header
-// would re-enter modifier headers before ParticleModifier was fully defined).
+// pulls in every header of the module, so including it from one of them would
+// re-enter the file currently being defined).
 
 #ifdef DEKI_EDITOR
     #ifdef _WIN32
