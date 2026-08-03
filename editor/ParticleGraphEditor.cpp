@@ -56,10 +56,15 @@ REGISTER_EDITOR(ParticleGraphAssetEditor)
 // its particles, so the Node Graph window can offer a Preview panel.
 NodeGraphPreviewOps DekiParticles_PreviewOps();
 
-REGISTER_NODE_GRAPH_DOMAIN_PREVIEW(g_ParticleDomain,
-                                   "ParticleGraph", "Particle Effect",
-                                   "Particles", "ParticleEmit",
-                                   DekiParticles_PreviewOps());
+// Implemented in ParticleNodeGizmos.cpp: draws the selected node's shape, arc
+// or ramp in the properties panel, under its title.
+NodeGraphNodeGizmoOps DekiParticles_GizmoOps();
+
+REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(g_ParticleDomain,
+                                          "ParticleGraph", "Particle Effect",
+                                          "Particles", "ParticleEmit",
+                                          DekiParticles_PreviewOps(),
+                                          DekiParticles_GizmoOps());
 
 // Re-registration hook for plugin-only hot reload: the editor wipes the domain
 // registry while this DLL stays loaded, so the static registrar above never
