@@ -16,6 +16,10 @@
  * ParticleEmitterComponent, not in the graph, so a graph on its own has no
  * texture to show. Motion, spread, gravity, drag, size and color all read
  * correctly from dots; only the artwork is missing.
+ *
+ * The emitter's SHAPE is outlined under them at the same scale, so a radius is
+ * shown against the spray it produces rather than as a number in a field. It
+ * draws whether or not the chain builds, since wiring is exactly when it helps.
  */
 
 #ifdef DEKI_EDITOR
@@ -73,6 +77,75 @@ uint64_t TopologyOf(const NodeGraphPreviewGraph& graph)
     return h;
 }
 
+// Polyline ring: the canvas has a filled circle and a line, and an outline is
+// the one thing a shape gizmo actually needs.
+void StrokeCircle(const NodeGraphPreviewCanvas& canvas, float cx, float cy, float r,
+                  uint32_t rgba, float thickness)
+{
+    if (r <= 0.5f)
+        return;
+    int seg = static_cast<int>(r * 0.9f);
+    if (seg < 16) seg = 16;
+    if (seg > 96) seg = 96;
+    float px = cx + r, py = cy;
+    for (int i = 1; i <= seg; ++i)
+    {
+        const float a = (DekiMath::kTwoPi * static_cast<float>(i)) / static_cast<float>(seg);
+        const float qx = cx + std::cos(a) * r;
+        const float qy = cy - std::sin(a) * r;
+        canvas.line(canvas.ctx, px, py, qx, qy, rgba, thickness);
+        px = qx;
+        py = qy;
+    }
+}
+
+// The emitter's SHAPE, drawn where particles are actually born and at the scale
+// they move in. This is the one place a radius is a MEASURE rather than a
+// proportion: the panel's px/m slider scales the outline and the particles
+// together, so a 0.3 m circle looks 0.3 m next to the spray leaving it. Kept
+// faint and drawn under the particles - the effect is the subject, this is the
+// frame around it.
+void DrawEmitterShape(const NodeGraphPreviewGraph& graph, float cx, float cy,
+                      float pixelsPerMeter, const NodeGraphPreviewCanvas& canvas)
+{
+    const NodeGraphPreviewNode* node =
+        graph.FindFirstOfType(DekiHashString(ParticleEmissionNode::StaticNodeName));
+    if (!node || !node->instance)
+        return;
+    const auto& e = *static_cast<const ParticleEmissionNode*>(node->instance);
+
+    const uint32_t line = NodeGraphPreviewRgba(122, 190, 255, e.enabled ? 90 : 40);
+    const uint32_t mark = NodeGraphPreviewRgba(255, 255, 255, 60);
+
+    switch (e.shape)
+    {
+        case EmitterShapeKind::Circle:
+            StrokeCircle(canvas, cx, cy, e.radius * pixelsPerMeter, line, 1.0f);
+            break;
+        case EmitterShapeKind::Rect:
+        {
+            const float hw = e.width  * 0.5f * pixelsPerMeter;
+            const float hh = e.height * 0.5f * pixelsPerMeter;
+            if (hw > 0.5f || hh > 0.5f)
+            {
+                canvas.line(canvas.ctx, cx - hw, cy - hh, cx + hw, cy - hh, line, 1.0f);
+                canvas.line(canvas.ctx, cx + hw, cy - hh, cx + hw, cy + hh, line, 1.0f);
+                canvas.line(canvas.ctx, cx + hw, cy + hh, cx - hw, cy + hh, line, 1.0f);
+                canvas.line(canvas.ctx, cx - hw, cy + hh, cx - hw, cy - hh, line, 1.0f);
+            }
+            break;
+        }
+        case EmitterShapeKind::Point:
+        default:
+            break;
+    }
+
+    // Origin, always: with a Point shape it is the whole gizmo, and with the
+    // others it says which way the effect is offset from its centre.
+    canvas.line(canvas.ctx, cx - 4.0f, cy, cx + 4.0f, cy, mark, 1.0f);
+    canvas.line(canvas.ctx, cx, cy - 4.0f, cx, cy + 4.0f, mark, 1.0f);
+}
+
 void* PreviewCreate()
 {
     auto* p = new ParticlePreviewState();
@@ -126,16 +199,20 @@ void PreviewTick(void* preview, const NodeGraphPreviewGraph& graph, float dt,
         p->topology = topology;
     }
 
-    if (!p->built)
-        return;
-
-    if (dt > 0.0f)
+    if (p->built && dt > 0.0f)
         p->emitter.Simulate(dt);
 
     // Origin at the centre of the preview rect, Y up (world convention) mapped
     // to Y down (screen).
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
+
+    // Before the early-out: a half-wired graph draws no particles, and the
+    // shape is exactly what you want to see while wiring it up.
+    DrawEmitterShape(graph, cx, cy, pixelsPerMeter, canvas);
+
+    if (!p->built)
+        return;
 
     auto& pool = p->emitter.pool;
     const int n = pool.AliveCount();
