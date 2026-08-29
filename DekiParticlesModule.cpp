@@ -44,10 +44,10 @@ namespace
     template<typename T>
     void RegisterParticleNodeType()
     {
-        PrefabFormat::NodeFactory::Instance().Register(
+        SceneFormat::NodeFactory::Instance().Register(
             DekiHashString(T::StaticNodeName),
             []() -> void* { return new T(); },
-            [](void* p, PrefabFormat::PrefabMsgPackParser& parser, uint32_t mapSize) -> bool {
+            [](void* p, SceneFormat::SceneMsgPackParser& parser, uint32_t mapSize) -> bool {
                 return DeserializeMsgPack(*static_cast<T*>(p), parser, mapSize); },
             [](void* p) { delete static_cast<T*>(p); });
         NodeTypeRegistry::Instance().Register(&T::GetNodeMeta(), sizeof(DekiNodeMeta));

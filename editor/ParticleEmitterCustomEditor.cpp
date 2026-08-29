@@ -17,7 +17,7 @@
 #include <deki-editor/EditorRegistry.h>
 #include <deki-editor/CustomEditor.h>
 #include <deki-editor/EditorUI.h>
-#include <deki-editor/PrefabView.h>
+#include <deki-editor/SceneView.h>
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include "DekiObject.h"
@@ -98,7 +98,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Gizmo: visualize the emission shape in the prefab view.
+    // Gizmo: visualize the emission shape in the scene view.
     // OnDrawGizmosSelected fires only when the emitter's owning object is
     // selected — same convention as Unity's "show shape only when selected".
     // -------------------------------------------------------------------
@@ -110,7 +110,7 @@ public:
         const ParticleEmissionNode* em = FindEmission(emitter);
         if (!em) return;
 
-        auto& view = PrefabView::Get();
+        auto& view = SceneView::Get();
 
         const float cx = view.GetScreenX();
         const float cy = view.GetScreenY();
@@ -119,7 +119,7 @@ public:
         // GetWorldToScreenScale so they match the rendered emission area.
         const float zoom      = view.GetZoom();
         const float worldToPx = view.GetWorldToScreenScale();
-        const uint32_t color = PrefabView::Rgba(255, 200, 60, 220);
+        const uint32_t color = SceneView::Rgba(255, 200, 60, 220);
 
         switch (em->shape)
         {

@@ -342,7 +342,7 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     // Per-particle blit into the bbox buffer. The bbox buffer's clip stack
     // is independent of the framebuffer's; we disable clip enforcement
     // for this nested render so global scene clips don't accidentally
-    // suppress particles outside the prefab view.
+    // suppress particles outside the scene view.
     bool prevClipEnabled = QuadBlit::IsClipEnabled();
     QuadBlit::SetClipEnabled(false);
 
