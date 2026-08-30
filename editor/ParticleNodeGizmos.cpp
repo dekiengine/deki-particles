@@ -42,7 +42,7 @@ constexpr float kPi    = DekiMath::kPi;
 constexpr float kTwoPi = DekiMath::kTwoPi;
 
 // ---------------------------------------------------------------------------
-// Palette. Local on purpose: a module must not reach into the editor's theme
+// Palette. Local on purpose: a package must not reach into the editor's theme
 // for drawing it does through the canvas ops, and these read against the dark
 // recessed band the window puts behind a gizmo.
 // ---------------------------------------------------------------------------
@@ -581,7 +581,7 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
 
     // Lerped by hand rather than through Color::Lerp: the same channel-wise
     // blend the runtime modifier does, and it keeps this file from depending on
-    // an engine symbol being exported to module DLLs.
+    // an engine symbol being exported to package DLLs.
     const int steps = 64;
     const float sw = (x1 - x0) / static_cast<float>(steps);
     const int r0 = n.colorAt0.r, g0 = n.colorAt0.g, b0 = n.colorAt0.b, a0 = n.colorAt0.a;

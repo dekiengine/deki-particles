@@ -1,6 +1,6 @@
 /**
- * @file DekiParticlesModule.cpp
- * @brief Module entry point for deki-particles DLL
+ * @file DekiParticlesPackage.cpp
+ * @brief Package entry point for deki-particles DLL
  *
  * Exports the standard Deki plugin interface so the editor can load
  * deki-particles.dll and register its one component (the emitter) plus the
@@ -8,14 +8,14 @@
  * nodes (Emission, Initial Velocity, Initial Rotation, Gravity, Drag, and the
  * Size / Color / Rotation over Lifetime trio).
  *
- * External particle modules ship modifiers the same way: declare a DEKI_NODE
+ * External particle packages ship modifiers the same way: declare a DEKI_NODE
  * struct in a category starting "Particles/", register its ParticleModifierOps
  * with REGISTER_PARTICLE_MODIFIER, and register the node type from your own
- * module entry. No changes to deki-particles required.
+ * package entry. No changes to deki-particles required.
  */
 
 #include "interop/DekiPlugin.h"
-#include "DekiModuleFeatureMeta.h"
+#include "DekiPackageFeatureMeta.h"
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include "ParticleSystem.h"
@@ -39,7 +39,7 @@ namespace
     // Re-runnable mirror of the generated REGISTER_RUNTIME_NODE/REGISTER_NODE
     // static registrars. Those run once at DLL load; the editor's plugin-only
     // hot reload wipes the shared node registries WITHOUT unloading this
-    // module, so registration must be repeatable on demand. NodeFactory
+    // package, so registration must be repeatable on demand. NodeFactory
     // overwrites by typeId and NodeTypeRegistry dedupes, so this is idempotent.
     template<typename T>
     void RegisterParticleNodeType()
@@ -57,8 +57,8 @@ namespace
 extern "C" {
 
 /**
- * @brief (Re-)register this module's node graph types: modifier node
- * factories, editor metas, and the Particles graph domain. Called at module
+ * @brief (Re-)register this package's node graph types: modifier node
+ * factories, editor metas, and the Particles graph domain. Called at package
  * load via DekiPlugin_RegisterComponents and again after any registry wipe
  * that keeps this DLL loaded (plugin-only hot reload).
  */
@@ -87,13 +87,13 @@ DEKI_PARTICLES_API int DekiParticles_EnsureRegistered(void)
 
 DEKI_PLUGIN_API const char* DekiPlugin_GetName(void)
 {
-    return "Deki Particles Module";
+    return "Deki Particles Package";
 }
 
 DEKI_PLUGIN_API const char* DekiPlugin_GetVersion(void)
 {
-#ifdef DEKI_MODULE_VERSION
-    return DEKI_MODULE_VERSION;
+#ifdef DEKI_PACKAGE_VERSION
+    return DEKI_PACKAGE_VERSION;
 #else
     return "0.0.0-dev";
 #endif
@@ -141,7 +141,7 @@ DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
 
 
 // =============================================================================
-// Module Feature API
+// Package Feature API
 // =============================================================================
 
 // One component now: the modifiers are graph node types, not components.
@@ -149,7 +149,7 @@ static const char* s_ParticleGuids[] = {
     ParticleEmitterComponent::StaticGuid,
 };
 
-static const DekiModuleFeatureInfo s_Features[] = {
+static const DekiPackageFeatureInfo s_Features[] = {
     {
         "particle-emitter", "Particle Emitter",
         "Particle system: an emitter driven by a graph of behavior modifiers",
@@ -164,17 +164,17 @@ DEKI_PLUGIN_API int DekiPlugin_GetFeatureCount(void)
     return sizeof(s_Features) / sizeof(s_Features[0]);
 }
 
-DEKI_PLUGIN_API const DekiModuleFeatureInfo* DekiPlugin_GetFeature(int index)
+DEKI_PLUGIN_API const DekiPackageFeatureInfo* DekiPlugin_GetFeature(int index)
 {
     if (index < 0 || index >= DekiPlugin_GetFeatureCount())
         return nullptr;
     return &s_Features[index];
 }
 
-// Module-specific feature API (for linked-DLL access without name conflicts)
+// Package-specific feature API (for linked-DLL access without name conflicts)
 DEKI_PARTICLES_API const char* DekiParticles_GetName(void)        { return "Particles"; }
 DEKI_PARTICLES_API int DekiParticles_GetFeatureCount(void)        { return DekiPlugin_GetFeatureCount(); }
-DEKI_PARTICLES_API const DekiModuleFeatureInfo* DekiParticles_GetFeature(int index) { return DekiPlugin_GetFeature(index); }
+DEKI_PARTICLES_API const DekiPackageFeatureInfo* DekiParticles_GetFeature(int index) { return DekiPlugin_GetFeature(index); }
 
 } // extern "C"
 

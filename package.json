@@ -1,7 +1,7 @@
 {
   "id": "deki-particles",
   "displayName": "Particles",
-  "buildDefine": "DEKI_MODULE_PARTICLES",
+  "buildDefine": "DEKI_PACKAGE_PARTICLES",
   "requires": ["deki-nodegraph", "deki-rendering", "deki-2d"],
   "features": [
     {

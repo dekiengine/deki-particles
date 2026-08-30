@@ -69,7 +69,7 @@ REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(g_ParticleDomain,
 // Re-registration hook for plugin-only hot reload: the editor wipes the domain
 // registry while this DLL stays loaded, so the static registrar above never
 // reruns. Registry Register() dedupes, so calling this repeatedly is safe.
-// Invoked from DekiParticles_RegisterGraphTypes (DekiParticlesModule.cpp).
+// Invoked from DekiParticles_RegisterGraphTypes (DekiParticlesPackage.cpp).
 extern "C" void DekiParticles_RegisterEditorGraphDomain(void)
 {
     NodeGraphDomainRegistry::Instance().Register(&g_ParticleDomain);

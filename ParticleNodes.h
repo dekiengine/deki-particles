@@ -31,7 +31,7 @@
 //
 // A new modifier type is a struct here (plus its generated include at the
 // bottom), an ops registration in ParticleModifierLibrary.cpp, and a line in
-// DekiParticles_RegisterGraphTypes. Another module can add one the same way
+// DekiParticles_RegisterGraphTypes. Another package can add one the same way
 // with no change to deki-particles: its category just has to start "Particles/".
 
 // ---------------------------------------------------------------------------

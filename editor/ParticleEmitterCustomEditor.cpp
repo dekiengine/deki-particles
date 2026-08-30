@@ -7,7 +7,7 @@
  *  - Draws the emission shape as a gizmo when the object is selected.
  *
  * The modifiers are nodes of the assigned ParticleGraph asset, edited in the
- * Node Graph window (double-click the asset), so there is no module list here.
+ * Node Graph window (double-click the asset), so there is no package list here.
  * Restart rebuilds the chain from the graph, which is how a graph edit reaches
  * a running preview.
  */
@@ -27,7 +27,7 @@
 #include <chrono>
 
 // Lucide icons (UTF-8 bytes from deki-editor's IconsLucide.h — inlined here so
-// the module doesn't depend on an editor-private header). Glyphs are merged
+// the package doesn't depend on an editor-private header). Glyphs are merged
 // into the default ImGui font, so we just embed the bytes in button labels.
 #define LUCIDE_PLAY        "\xee\x84\xbc"
 #define LUCIDE_PAUSE       "\xee\x84\xae"
