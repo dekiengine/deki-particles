@@ -318,23 +318,23 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     int srcBpp = Texture2D::GetBytesPerPixel(spr->format);
     QuadBlit::Source src = QuadBlit::MakeSource(
         spr->data, spr->width, spr->height,
-        srcBpp, spr->has_alpha, isRGB565,
+        srcBpp, spr->hasAlpha, isRGB565,
         /*ownsPixels=*/false,
         spr->alphaRowSpans);
-    if (spr->has_chroma_key)
+    if (spr->hasChromaKey)
     {
         src.hasChromaKey = true;
         if (isRGB565)
         {
-            src.keyR = (uint8_t)((spr->transparent_r >> 3) << 3);
-            src.keyG = (uint8_t)((spr->transparent_g >> 2) << 2);
-            src.keyB = (uint8_t)((spr->transparent_b >> 3) << 3);
+            src.keyR = (uint8_t)((spr->transparentR >> 3) << 3);
+            src.keyG = (uint8_t)((spr->transparentG >> 2) << 2);
+            src.keyB = (uint8_t)((spr->transparentB >> 3) << 3);
         }
         else
         {
-            src.keyR = spr->transparent_r;
-            src.keyG = spr->transparent_g;
-            src.keyB = spr->transparent_b;
+            src.keyR = spr->transparentR;
+            src.keyG = spr->transparentG;
+            src.keyB = spr->transparentB;
         }
         src.chromaRowSpans = spr->chromaRowSpans;
     }
