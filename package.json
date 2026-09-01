@@ -1,8 +1,13 @@
 {
   "id": "deki-particles",
   "displayName": "Particles",
+  "minEngine": "1.1.0",
   "buildDefine": "DEKI_PACKAGE_PARTICLES",
-  "requires": ["deki-nodegraph", "deki-rendering", "deki-2d"],
+  "requires": [
+    "deki-nodegraph",
+    "deki-rendering",
+    "deki-2d"
+  ],
   "features": [
     {
       "id": "particle-emitter",
