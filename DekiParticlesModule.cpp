@@ -15,7 +15,6 @@
  */
 
 #include "interop/DekiPlugin.h"
-#include "DekiPackageFeatureMeta.h"
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include "ParticleSystem.h"
@@ -99,11 +98,6 @@ DEKI_PLUGIN_API const char* DekiPlugin_GetVersion(void)
 #endif
 }
 
-DEKI_PLUGIN_API const char* DekiPlugin_GetReflectionJson(void)
-{
-    return "{}";
-}
-
 DEKI_PLUGIN_API int DekiPlugin_Init(void)
 {
     return 0;
@@ -139,43 +133,12 @@ DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
     ParticleSystem::GetInstance().ClearAll();
 }
 
-
-// =============================================================================
-// Package Feature API
-// =============================================================================
-
 // One component now: the modifiers are graph node types, not components.
-static const char* s_ParticleGuids[] = {
     ParticleEmitterComponent::StaticGuid,
 };
 
-static const DekiPackageFeatureInfo s_Features[] = {
-    {
-        "particle-emitter", "Particle Emitter",
-        "Particle system: an emitter driven by a graph of behavior modifiers",
-        true, "DEKI_FEATURE_PARTICLE_EMITTER",
-        s_ParticleGuids,
-        sizeof(s_ParticleGuids) / sizeof(s_ParticleGuids[0])
-    },
-};
-
-DEKI_PLUGIN_API int DekiPlugin_GetFeatureCount(void)
-{
-    return sizeof(s_Features) / sizeof(s_Features[0]);
-}
-
-DEKI_PLUGIN_API const DekiPackageFeatureInfo* DekiPlugin_GetFeature(int index)
-{
-    if (index < 0 || index >= DekiPlugin_GetFeatureCount())
-        return nullptr;
-    return &s_Features[index];
-}
-
 // Package-specific feature API (for linked-DLL access without name conflicts)
 DEKI_PARTICLES_API const char* DekiParticles_GetName(void)        { return "Particles"; }
-DEKI_PARTICLES_API int DekiParticles_GetFeatureCount(void)        { return DekiPlugin_GetFeatureCount(); }
-DEKI_PARTICLES_API const DekiPackageFeatureInfo* DekiParticles_GetFeature(int index) { return DekiPlugin_GetFeature(index); }
-
 } // extern "C"
 
 #endif // DEKI_EDITOR

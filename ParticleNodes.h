@@ -268,8 +268,8 @@ struct ParticleColorOverLifetimeNode
 public:
     DEKI_EXPORT bool enabled = true;
 
-    DEKI_EXPORT deki::Color colorAt0 = deki::Color::White;
-    DEKI_EXPORT deki::Color colorAt1 = deki::Color::Transparent;
+    DEKI_EXPORT Deki::Color colorAt0 = Deki::Color::White;
+    DEKI_EXPORT Deki::Color colorAt1 = Deki::Color::Transparent;
 };
 
 // Lerps the spin RATE across the particle's life and integrates it. Pair it

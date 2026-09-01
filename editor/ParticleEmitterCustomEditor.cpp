@@ -18,6 +18,7 @@
 #include <deki-editor/CustomEditor.h>
 #include <deki-editor/EditorUI.h>
 #include <deki-editor/SceneView.h>
+#include <deki-editor/IconsTabler.h>
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include "DekiObject.h"
@@ -26,13 +27,11 @@
 #include <cstdio>
 #include <chrono>
 
-// Lucide icons (UTF-8 bytes from deki-editor's IconsLucide.h — inlined here so
-// the package doesn't depend on an editor-private header). Glyphs are merged
-// into the default ImGui font, so we just embed the bytes in button labels.
-#define LUCIDE_PLAY        "\xee\x84\xbc"
-#define LUCIDE_PAUSE       "\xee\x84\xae"
-#define LUCIDE_STEP_FWD    "\xee\x8f\xaa"
-#define LUCIDE_ROTATE_CCW  "\xee\x85\x88"
+// These were inlined Lucide codepoints (U+E12E/E13C/E148/E3EA), copied from an
+// editor-private IconsLucide.h. They never rendered: the editor merges only
+// tabler-icons.ttf, from ICON_MIN_TI (0xEA02) upward, so all four fell outside
+// the loaded range and drew as missing glyphs. IconsTabler.h is a public
+// deki-editor header, so use it directly rather than re-inlining bytes.
 
 namespace DekiEditor
 {
@@ -179,16 +178,16 @@ private:
 
         // Auto-width buttons so the larger Lucide glyphs fit without truncation.
         const bool playing = emitter->IsEditorPreviewPlaying();
-        const char* playLabel = playing ? LUCIDE_PAUSE " Pause" : LUCIDE_PLAY " Play";
+        const char* playLabel = playing ? ICON_TI_PLAYER_PAUSE " Pause" : ICON_TI_PLAYER_PLAY " Play";
         if (ui.Button(playLabel))
             emitter->EditorPreviewSetPlaying(!playing);
         ui.SameLine();
-        if (ui.Button(LUCIDE_STEP_FWD " Step"))
+        if (ui.Button(ICON_TI_PLAYER_SKIP_FORWARD " Step"))
             m_StepRequested[emitter] = true;
         ui.SameLine();
         // Restart also rebuilds the chain, so it is how a reimported graph
         // reaches this preview.
-        if (ui.Button(LUCIDE_ROTATE_CCW " Restart"))
+        if (ui.Button(ICON_TI_ROTATE " Restart"))
             emitter->EditorPreviewRestart();
         ui.SameLine();
         ui.AlignTextToFramePadding();
