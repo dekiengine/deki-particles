@@ -133,10 +133,6 @@ DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
     ParticleSystem::GetInstance().ClearAll();
 }
 
-// One component now: the modifiers are graph node types, not components.
-    ParticleEmitterComponent::StaticGuid,
-};
-
 // Package-specific feature API (for linked-DLL access without name conflicts)
 DEKI_PARTICLES_API const char* DekiParticles_GetName(void)        { return "Particles"; }
 } // extern "C"
