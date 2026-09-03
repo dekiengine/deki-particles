@@ -32,7 +32,7 @@
  * "as authored".
  *
  * Render path: rasterizes all alive particles into a single intermediate
- * buffer at the sprite's pixel scale, sized to the tight bounding box of the
+ * RGB565A8 buffer at the sprite's pixel scale, sized to the tight bounding box of the
  * alive particles, and returns one QuadBlit::Source with pixelsPerMeter set
  * to the sprite's. The framework does the final blit at the emitter's world
  * transform — sort order is per-emitter, never per-particle.

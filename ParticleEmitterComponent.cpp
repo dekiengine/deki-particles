@@ -361,10 +361,12 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     const int bboxH = b.maxY - b.minY;
     const float ppm = b.ppm;
 
-    // ARGB8888 intermediate (4 bytes/pixel). QuadBlit's only RGB565-family
-    // target is plain RGB565 with no alpha, which can't accumulate alpha-blended
-    // particles. ARGB8888 is the smallest target format that preserves alpha.
-    const int bytesPerPixel = 4;
+    // RGB565A8 intermediate (3 bytes/pixel: [lo, hi, alpha]). It is the one
+    // QuadBlit target that keeps coverage alpha (ARGB8888 targets write alpha
+    // 0xFF on every touched pixel, so a soft particle edge came out opaque),
+    // it is a quarter smaller than ARGB8888, and the final composite onto an
+    // RGB565 framebuffer takes QuadBlit's RGB565A8 fast paths.
+    const int bytesPerPixel = 3;
     const int needBytes = bboxW * bboxH * bytesPerPixel;
     if (needBytes > m_BboxBufBytes)
     {
@@ -429,7 +431,7 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
 
         QuadBlit::Blit(
             src,
-            m_BboxBuf, bboxW, bboxH, DekiColorFormat::ARGB8888,
+            m_BboxBuf, bboxW, bboxH, DekiColorFormat::RGB565A8,
             static_cast<int32_t>(lx), static_cast<int32_t>(ly),
             s, s, r,
             0.5f, 0.5f,
@@ -444,7 +446,7 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
         m_BboxBuf, bboxW, bboxH,
         bytesPerPixel,
         /*hasAlpha=*/true,
-        /*isRGB565=*/false,
+        /*isRGB565=*/true,
         /*ownsPixels=*/false);
     outSource.pixelsPerMeter = ppm;
 
