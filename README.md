@@ -10,6 +10,20 @@ Part of the [Deki Engine](https://github.com/Kirbyrawr/deki-engine) package ecos
 
 Install via the Package Manager inside the Deki Editor.
 
+## Units
+
+Particle positions and velocities are world metres, like every other
+component; the graph nodes' speeds are m/s and radii are metres. The sprite
+is drawn at its own `pixelsPerMeter`, so a particle sprite has the size its
+art was authored at when the camera runs at the sprite's ppm, and a scale
+of 1 means "as authored".
+
+Before September 2026 the emitter composited the sprite at one composite
+pixel per metre, so a 16 px sprite covered 16 m on screen (16x its authored
+size at 16 ppm) while positions were already metres. Scenes authored against
+that behaviour will show their particle sprites at the authored size now;
+scale them up in the graph's size node if the old look was intended.
+
 ## Adding your own modifier
 
 From any package or the project DLL, with no change to deki-particles:

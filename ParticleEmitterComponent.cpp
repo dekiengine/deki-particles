@@ -8,7 +8,9 @@
 #include "deki-2d/Texture2D.h"
 #include "deki-rendering/QuadBlit.h"
 #include "DekiEngine.h"  // for DekiColorFormat enum
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <cstdint>
 
@@ -230,6 +232,99 @@ void ParticleEmitterComponent::FreeBboxBuf()
     m_BboxBufBytes = 0;
 }
 
+namespace
+{
+// Composite pixels per world metre: the sprite's own scale, so the emitter's
+// output is 1:1 with the art whenever the camera runs at the sprite's ppm.
+inline float SpritePpm(const Sprite* spr)
+{
+    return (spr && spr->pixelsPerMeter > 0.0f) ? spr->pixelsPerMeter : 1.0f;
+}
+}  // namespace
+
+void ParticleEmitterComponent::AnchorFor(const DekiObject* owner, float& anchorX, float& anchorY) const
+{
+    // worldSpace=true: particles store world coords; subtract the emitter's
+    // world origin so the composite sits at the emitter after the final
+    // transform. worldSpace=false: particles are emitter-local already.
+    anchorX = 0.0f;
+    anchorY = 0.0f;
+    if (worldSpace && owner)
+    {
+        anchorX = owner->GetWorldX();
+        anchorY = owner->GetWorldY();
+    }
+}
+
+bool ParticleEmitterComponent::ComputeBounds(const Sprite* spr, float anchorX, float anchorY, Bounds& out) const
+{
+    const int n = pool.AliveCount();
+    if (n <= 0 || !spr)
+        return false;
+
+    const float ppm = SpritePpm(spr);
+    const float spriteW = static_cast<float>(spr->width);
+    const float spriteH = static_cast<float>(spr->height);
+    // Rotation expands the box up to sqrt(2). 1.45 leaves a one-pixel guard band.
+    constexpr float kRotPad = 1.45f;
+    const bool hasScale = pool.HasScale();
+    const float* px = pool.posX;
+    const float* py = pool.posY;
+    const float* ps = pool.scale;
+
+    float minX = 1e9f, minY = 1e9f;
+    float maxX = -1e9f, maxY = -1e9f;
+    for (int i = 0; i < n; ++i)
+    {
+        const float lx = (px[i] - anchorX) * ppm;  // metres -> composite pixels
+        const float ly = (py[i] - anchorY) * ppm;
+        const float s = hasScale ? ps[i] : 1.0f;
+        const float halfW = 0.5f * spriteW * s * kRotPad;
+        const float halfH = 0.5f * spriteH * s * kRotPad;
+        if (lx - halfW < minX) minX = lx - halfW;
+        if (ly - halfH < minY) minY = ly - halfH;
+        if (lx + halfW > maxX) maxX = lx + halfW;
+        if (ly + halfH > maxY) maxY = ly + halfH;
+    }
+
+    out.minX = static_cast<int32_t>(std::floor(minX));
+    out.minY = static_cast<int32_t>(std::floor(minY));
+    out.maxX = static_cast<int32_t>(std::ceil(maxX));
+    out.maxY = static_cast<int32_t>(std::ceil(maxY));
+    out.ppm = ppm;
+    return (out.maxX - out.minX) > 0 && (out.maxY - out.minY) > 0;
+}
+
+bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeight) const
+{
+    const Sprite* spr = sprite.Get();
+    if (!spr || !spr->data)
+        return false;  // RenderContent logs the missing sprite; let it run
+
+    if (pool.AliveCount() <= 0)
+    {
+        outWidth = outHeight = 0.0f;  // nothing to draw: cull the RenderContent call too
+        return true;
+    }
+
+    float anchorX, anchorY;
+    AnchorFor(GetOwner(), anchorX, anchorY);
+    Bounds b;
+    if (!ComputeBounds(spr, anchorX, anchorY, b))
+    {
+        outWidth = outHeight = 0.0f;
+        return true;
+    }
+    // The renderer assumes the content lies within one full extent of the
+    // origin in every direction; the box is not centred on the emitter, so
+    // report the farther edge on each axis.
+    const float reachX = static_cast<float>(std::max(std::abs(b.minX), std::abs(b.maxX)));
+    const float reachY = static_cast<float>(std::max(std::abs(b.minY), std::abs(b.maxY)));
+    outWidth = reachX / b.ppm;
+    outHeight = reachY / b.ppm;
+    return true;
+}
+
 bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
                                               QuadBlit::Source& outSource,
                                               float& outPivotX,
@@ -252,58 +347,25 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
         return false;
     }
 
-    int n = pool.AliveCount();
+    const int n = pool.AliveCount();
     if (n <= 0)
         return false;
 
-    // Anchor for converting particle positions to bbox-local coordinates.
-    // worldSpace=true: particles store world coords; subtract emitter's world
-    // origin so the bbox sits at the emitter's location after final transform.
-    // worldSpace=false: particles store emitter-local coords; no subtraction.
-    float anchorX = 0.0f, anchorY = 0.0f;
-    if (worldSpace && owner)
-    {
-        anchorX = (owner->GetWorldX());
-        anchorY = (owner->GetWorldY());
-    }
+    float anchorX, anchorY;
+    AnchorFor(owner, anchorX, anchorY);
 
-    const float spriteW = (float)spr->width;
-    const float spriteH = (float)spr->height;
-    // Rotation expands AABB up to sqrt(2). 1.45 leaves a one-pixel guard band.
-    constexpr float kRotPad = 1.45f;
-
-    // First pass: tight integer bbox over all alive particles. The rasterizer
-    // boundary uses float pixels; convert float positions/scale once per
-    // particle and stay in float for the bbox arithmetic.
-    float minX =  1e9f, minY =  1e9f;
-    float maxX = -1e9f, maxY = -1e9f;
-    for (int i = 0; i < n; ++i)
-    {
-        float lx = (pool.posX[i]) - anchorX;
-        float ly = (pool.posY[i]) - anchorY;
-        float s  = pool.HasScale() ? (pool.scale[i]) : 1.0f;
-        float halfW = 0.5f * spriteW * s * kRotPad;
-        float halfH = 0.5f * spriteH * s * kRotPad;
-        if (lx - halfW < minX) minX = lx - halfW;
-        if (ly - halfH < minY) minY = ly - halfH;
-        if (lx + halfW > maxX) maxX = lx + halfW;
-        if (ly + halfH > maxY) maxY = ly + halfH;
-    }
-
-    int bboxMinX = (int)std::floor(minX);
-    int bboxMinY = (int)std::floor(minY);
-    int bboxMaxX = (int)std::ceil(maxX);
-    int bboxMaxY = (int)std::ceil(maxY);
-    int bboxW = bboxMaxX - bboxMinX;
-    int bboxH = bboxMaxY - bboxMinY;
-    if (bboxW <= 0 || bboxH <= 0)
+    Bounds b;
+    if (!ComputeBounds(spr, anchorX, anchorY, b))
         return false;
+    const int bboxW = b.maxX - b.minX;
+    const int bboxH = b.maxY - b.minY;
+    const float ppm = b.ppm;
 
     // ARGB8888 intermediate (4 bytes/pixel). QuadBlit's only RGB565-family
     // target is plain RGB565 with no alpha, which can't accumulate alpha-blended
     // particles. ARGB8888 is the smallest target format that preserves alpha.
     const int bytesPerPixel = 4;
-    int needBytes = bboxW * bboxH * bytesPerPixel;
+    const int needBytes = bboxW * bboxH * bytesPerPixel;
     if (needBytes > m_BboxBufBytes)
     {
         delete[] m_BboxBuf;
@@ -314,9 +376,9 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     std::memset(m_BboxBuf, 0, needBytes);
 
     // Source descriptor for the sprite — same for every particle blit.
-    bool isRGB565 = (spr->format == Texture2D::TextureFormat::RGB565 ||
-                     spr->format == Texture2D::TextureFormat::RGB565A8);
-    int srcBpp = Texture2D::GetBytesPerPixel(spr->format);
+    const bool isRGB565 = (spr->format == Texture2D::TextureFormat::RGB565 ||
+                           spr->format == Texture2D::TextureFormat::RGB565A8);
+    const int srcBpp = Texture2D::GetBytesPerPixel(spr->format);
     QuadBlit::Source src = QuadBlit::MakeSource(
         spr->data, spr->width, spr->height,
         srcBpp, spr->hasAlpha, isRGB565,
@@ -325,46 +387,50 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
     if (spr->hasChromaKey)
     {
         src.hasChromaKey = true;
+        src.keyR = spr->transparentR;
+        src.keyG = spr->transparentG;
+        src.keyB = spr->transparentB;
         if (isRGB565)
-        {
-            src.keyR = spr->transparentR;
-            src.keyG = spr->transparentG;
-            src.keyB = spr->transparentB;
             DekiPixel::QuantizeRGB565(src.keyR, src.keyG, src.keyB);
-        }
-        else
-        {
-            src.keyR = spr->transparentR;
-            src.keyG = spr->transparentG;
-            src.keyB = spr->transparentB;
-        }
         src.chromaRowSpans = spr->chromaRowSpans;
     }
 
-    // Per-particle blit into the bbox buffer. The bbox buffer's clip stack
-    // is independent of the framebuffer's; we disable clip enforcement
-    // for this nested render so global scene clips don't accidentally
-    // suppress particles outside the scene view.
-    bool prevClipEnabled = QuadBlit::IsClipEnabled();
+    // Per-particle blit into the composite. Its clip stack is independent of
+    // the framebuffer's; disable clip enforcement for this nested render so
+    // scene clips don't suppress particles inside the composite (the final
+    // blit is clipped as one sprite).
+    const bool prevClipEnabled = QuadBlit::IsClipEnabled();
     QuadBlit::SetClipEnabled(false);
+
+    const bool hasScale = pool.HasScale();
+    const bool hasRotation = pool.HasRotation();
+    const bool hasTint = pool.HasTint();
+    const float* px = pool.posX;
+    const float* py = pool.posY;
+    const float* ps = pool.scale;
+    const float* pr = pool.rotation;
 
     for (int i = 0; i < n; ++i)
     {
-        float lx = (pool.posX[i]) - anchorX - (float)bboxMinX;
-        float ly = (pool.posY[i]) - anchorY - (float)bboxMinY;
-        float s  = pool.HasScale() ? (pool.scale[i]) : 1.0f;
-        // rotation column is float radians; QuadBlit takes float radians.
-        float r  = pool.HasRotation() ? (pool.rotation[i]) : 0.0f;
-        uint8_t tR = pool.HasTint() ? pool.tintR[i] : 255;
-        uint8_t tG = pool.HasTint() ? pool.tintG[i] : 255;
-        uint8_t tB = pool.HasTint() ? pool.tintB[i] : 255;
-        uint8_t tA = pool.HasTint() ? pool.tintA[i] : 255;
-        if (tA == 0) continue;
+        // Metres -> composite pixels, relative to the box origin.
+        const float lx = (px[i] - anchorX) * ppm - static_cast<float>(b.minX);
+        const float ly = (py[i] - anchorY) * ppm - static_cast<float>(b.minY);
+        const float s = hasScale ? ps[i] : 1.0f;
+        const float r = hasRotation ? pr[i] : 0.0f;  // radians; Blit takes 0 through the scaled path
+        uint8_t tR = 255, tG = 255, tB = 255, tA = 255;
+        if (hasTint)
+        {
+            tR = pool.tintR[i];
+            tG = pool.tintG[i];
+            tB = pool.tintB[i];
+            tA = pool.tintA[i];
+            if (tA == 0) continue;
+        }
 
         QuadBlit::Blit(
             src,
             m_BboxBuf, bboxW, bboxH, DekiColorFormat::ARGB8888,
-            (int32_t)lx, (int32_t)ly,
+            static_cast<int32_t>(lx), static_cast<int32_t>(ly),
             s, s, r,
             0.5f, 0.5f,
             tR, tG, tB, tA);
@@ -372,17 +438,18 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
 
     QuadBlit::SetClipEnabled(prevClipEnabled);
 
-    // Hand the bbox buffer back to the framework. The framework owns nothing —
-    // we keep m_BboxBuf around for next frame, so ownsPixels=false.
+    // Hand the composite back to the framework. We keep m_BboxBuf for next
+    // frame, so ownsPixels=false. Its pixels are at the sprite's scale.
     outSource = QuadBlit::MakeSource(
         m_BboxBuf, bboxW, bboxH,
         bytesPerPixel,
         /*hasAlpha=*/true,
         /*isRGB565=*/false,
         /*ownsPixels=*/false);
+    outSource.pixelsPerMeter = ppm;
 
-    // Pivot is the emitter's local origin within the bbox.
-    outPivotX = (bboxW > 0) ? (-(float)bboxMinX / (float)bboxW) : 0.5f;
-    outPivotY = (bboxH > 0) ? (-(float)bboxMinY / (float)bboxH) : 0.5f;
+    // Pivot is the emitter's local origin within the box.
+    outPivotX = -static_cast<float>(b.minX) / static_cast<float>(bboxW);
+    outPivotY = -static_cast<float>(b.minY) / static_cast<float>(bboxH);
     return true;
 }

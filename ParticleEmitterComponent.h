@@ -25,10 +25,19 @@
  * tuning values belong to the asset and are shared; each emitter owns only the
  * small per-modifier state blobs its chain allocated.
  *
+ * Units: particle positions and velocities are world metres, like every
+ * other component (the graph nodes' speeds are m/s). The sprite is drawn at
+ * its own pixelsPerMeter, so a particle sprite has the size its art was
+ * authored at when the camera runs at the sprite's ppm, and scale 1 means
+ * "as authored".
+ *
  * Render path: rasterizes all alive particles into a single intermediate
- * RGB565A8 buffer sized to the tight screen-space bounding box and returns
- * one QuadBlit::Source. The framework does the final blit at the emitter's
- * world transform — sort order is per-emitter, never per-particle.
+ * buffer at the sprite's pixel scale, sized to the tight bounding box of the
+ * alive particles, and returns one QuadBlit::Source with pixelsPerMeter set
+ * to the sprite's. The framework does the final blit at the emitter's world
+ * transform — sort order is per-emitter, never per-particle.
+ * GetContentExtents reports the same bounding box so an emitter whose
+ * particles are all off screen (or clipped away) does no work at all.
  *
  * Per CLAUDE.md "NEVER USE FALLBACKS": no sprite ⇒ renders nothing, logs
  * once. No graph ⇒ no particles ever spawn. A graph naming a modifier type
@@ -69,6 +78,8 @@ public:
     void Start() override;
     void Update() override;
     void UnloadAssets() override;
+
+    bool GetContentExtents(float& outWidth, float& outHeight) const override;
 
     bool RenderContent(const DekiObject* owner,
                        QuadBlit::Source& outSource,
@@ -143,6 +154,17 @@ private:
     void EnsurePoolAllocated();
     void FreeBboxBuf();
     void FreeChain();
+
+    // Tight bounding box of the alive particles in composite pixels (the
+    // sprite's pixel scale), relative to the emitter origin. False when
+    // there is nothing to draw.
+    struct Bounds
+    {
+        int32_t minX, minY, maxX, maxY;
+        float ppm;  // composite pixels per world metre (the sprite's)
+    };
+    bool ComputeBounds(const Sprite* spr, float anchorX, float anchorY, Bounds& out) const;
+    void AnchorFor(const DekiObject* owner, float& anchorX, float& anchorY) const;
 };
 
 // Generated property metadata
