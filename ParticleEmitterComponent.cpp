@@ -1,4 +1,5 @@
 #include "ParticleEmitterComponent.h"
+#include "PixelFormat.h"
 #include "ParticleNodes.h"
 #include "ParticleSystem.h"
 #include "DekiObject.h"
@@ -326,9 +327,10 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
         src.hasChromaKey = true;
         if (isRGB565)
         {
-            src.keyR = (uint8_t)((spr->transparentR >> 3) << 3);
-            src.keyG = (uint8_t)((spr->transparentG >> 2) << 2);
-            src.keyB = (uint8_t)((spr->transparentB >> 3) << 3);
+            src.keyR = spr->transparentR;
+            src.keyG = spr->transparentG;
+            src.keyB = spr->transparentB;
+            DekiPixel::QuantizeRGB565(src.keyR, src.keyG, src.keyB);
         }
         else
         {
