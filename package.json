@@ -1,7 +1,7 @@
 {
   "id": "deki-particles",
   "displayName": "Particles",
-  "minEngine": "1.1.0",
+  "minEngine": "1.2.0",
   "buildDefine": "DEKI_PACKAGE_PARTICLES",
   "requires": [
     "deki-nodegraph",
