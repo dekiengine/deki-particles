@@ -89,7 +89,7 @@ Components</h1>
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">Component  </th><th class="markdownTableHeadNone">Category  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><a class="el" href="#c-particleemittercomponent" title="ParticleEmitterComponent (Particle Emitter Component)">ParticleEmitterComponent</a>  </td><td class="markdownTableBodyNone">Particles  </td><td class="markdownTableBodyNone">Spawns and draws particles, following a particle graph asset.  </td></tr>
+<td class="markdownTableBodyNone"><a class="el" href="#c-particleemittercomponent" title="ParticleEmitterComponent">ParticleEmitterComponent</a>  </td><td class="markdownTableBodyNone">Particles  </td><td class="markdownTableBodyNone">Spawns and draws particles, following a particle graph asset.  </td></tr>
 </table>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md1"></a>
 Feature flags</h1>
@@ -103,33 +103,26 @@ Feature flags</h1>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
 Component reference</h1>
 <h2 class="doxsection"><a class="anchor" id="c-particleemittercomponent"></a>
-ParticleEmitterComponent (Particle Emitter Component)</h2>
+ParticleEmitterComponent</h2>
 <p>Spawns and draws particles, following a particle graph asset.</p>
-<p>Category: Particles · Base: RendererComponent · Type GUID: <span class="tt">b1e0e1a0-1111-4002-9002-000000000010</span></p>
+<p>Inspector name: Particle Emitter Component · Category: Particles · Type GUID: <span class="tt">b1e0e1a0-1111-4002-9002-000000000010</span></p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Property  </th><th class="markdownTableHeadNone">Type  </th><th class="markdownTableHeadNone">Default  </th><th class="markdownTableHeadNone">Notes  </th></tr>
+<th class="markdownTableHeadNone">Property  </th><th class="markdownTableHeadNone">Type  </th><th class="markdownTableHeadNone">Default  </th><th class="markdownTableHeadNone">Constraints  </th><th class="markdownTableHeadNone">Description  </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><span class="tt">sortingOrder</span>  </td><td class="markdownTableBodyNone">int32  </td><td class="markdownTableBodyNone"><span class="tt">0</span>  </td><td class="markdownTableBodyNone">From RendererComponent  </td></tr>
+<td class="markdownTableBodyNone"><span class="tt">sprite</span>  </td><td class="markdownTableBodyNone">AssetRef (Sprite)  </td><td class="markdownTableBodyNone"><span class="tt">""</span>  </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><span class="tt">ignoreClip</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">false</span>  </td><td class="markdownTableBodyNone">From RendererComponent  </td></tr>
+<td class="markdownTableBodyNone"><span class="tt">graph</span>  </td><td class="markdownTableBodyNone">AssetRef (ParticleGraph)  </td><td class="markdownTableBodyNone"><span class="tt">""</span>  </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><span class="tt">pixelSnap</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone">From RendererComponent  </td></tr>
+<td class="markdownTableBodyNone"><span class="tt">maxParticles</span>  </td><td class="markdownTableBodyNone">int32  </td><td class="markdownTableBodyNone"><span class="tt">64</span>  </td><td class="markdownTableBodyNone">0 to 4096  </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><span class="tt">alphaMode</span>  </td><td class="markdownTableBodyNone">enum  </td><td class="markdownTableBodyNone"><span class="tt">Blend</span>  </td><td class="markdownTableBodyNone">How partial-alpha pixels are rendered. Blend = smooth alpha blend (slower, no artifacts). OrderedDither = stippling pattern (much faster, visible dither — best for fades and retro pixel art). Values: <span class="tt">Blend</span>, <span class="tt">OrderedDither</span> From RendererComponent  </td></tr>
+<td class="markdownTableBodyNone"><span class="tt">playOnAwake</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><span class="tt">sprite</span>  </td><td class="markdownTableBodyNone">AssetRef (Sprite)  </td><td class="markdownTableBodyNone"><span class="tt">""</span>  </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone"><span class="tt">looping</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><span class="tt">graph</span>  </td><td class="markdownTableBodyNone">AssetRef (ParticleGraph)  </td><td class="markdownTableBodyNone"><span class="tt">""</span>  </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><span class="tt">maxParticles</span>  </td><td class="markdownTableBodyNone">int32  </td><td class="markdownTableBodyNone"><span class="tt">64</span>  </td><td class="markdownTableBodyNone">Range 0 to 4096  </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><span class="tt">playOnAwake</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><span class="tt">looping</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><span class="tt">worldSpace</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone"><span class="tt">worldSpace</span>  </td><td class="markdownTableBodyNone">bool  </td><td class="markdownTableBodyNone"><span class="tt">true</span>  </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 </table>
+<p>Inherits <span class="tt">sortingOrder</span>, <span class="tt">ignoreClip</span>, <span class="tt">pixelSnap</span>, <span class="tt">alphaMode</span> from <a href="https://dekiengine.github.io/docs/engine-core.html#engine-renderercomponent">RendererComponent</a>.</p>
 <hr  />
 <p>Generated from the package's reflection metadata by the Deki documentation build (engine 1.3.0). Reflected property names are the keys scene files use; a rename ships with an alias, see <a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">COMPATIBILITY.md</a>. </p>
 </div></div><!-- PageDoc -->

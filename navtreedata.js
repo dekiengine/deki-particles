@@ -28,7 +28,7 @@ var NAVTREE =
     [ "Components", "index.html#autotoc_md0", null ],
     [ "Feature flags", "index.html#autotoc_md1", null ],
     [ "Component reference", "index.html#autotoc_md2", [
-      [ "ParticleEmitterComponent (Particle Emitter Component)", "index.html#c-particleemittercomponent", null ]
+      [ "ParticleEmitterComponent", "index.html#c-particleemittercomponent", null ]
     ] ]
   ] ]
 ];
