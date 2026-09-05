@@ -75,7 +75,7 @@ bool ParticleEmitterComponent::RebuildChain()
 
     const char* error = nullptr;
     if (BuildParticleChain(g->data->Root(),
-                           DekiHashString(ParticleEmitNode::StaticNodeName),
+                           Deki::HashString(ParticleEmitNode::StaticNodeName),
                            m_Chain, &error))
         return true;
 
@@ -130,7 +130,7 @@ int ParticleEmitterComponent::Spawn()
 
 void ParticleEmitterComponent::Update()
 {
-    float dt = DekiTime::GetDeltaTimeF() / 1000.0f;
+    float dt = Deki::Time::GetDeltaTimeF() / 1000.0f;
     Simulate(dt);
 }
 
@@ -242,7 +242,7 @@ inline float SpritePpm(const Sprite* spr)
 }
 }  // namespace
 
-void ParticleEmitterComponent::AnchorFor(const DekiObject* owner, float& anchorX, float& anchorY) const
+void ParticleEmitterComponent::AnchorFor(const Deki::Object* owner, float& anchorX, float& anchorY) const
 {
     // worldSpace=true: particles store world coords; subtract the emitter's
     // world origin so the composite sits at the emitter after the final
@@ -325,7 +325,7 @@ bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeig
     return true;
 }
 
-bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
+bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
                                               QuadBlit::Source& outSource,
                                               float& outPivotX,
                                               float& outPivotY,
@@ -431,7 +431,7 @@ bool ParticleEmitterComponent::RenderContent(const DekiObject* owner,
 
         QuadBlit::Blit(
             src,
-            m_BboxBuf, bboxW, bboxH, DekiColorFormat::RGB565A8,
+            m_BboxBuf, bboxW, bboxH, Deki::ColorFormat::RGB565A8,
             static_cast<int32_t>(lx), static_cast<int32_t>(ly),
             s, s, r,
             0.5f, 0.5f,

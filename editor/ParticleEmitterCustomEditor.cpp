@@ -46,7 +46,7 @@ namespace
         ParticleGraph* g = emitter->graph.Get();
         if (!g || !g->data) return nullptr;
         const NodeGraphData::NodeInstance* node = g->data->Root().FindFirstOfType(
-            DekiHashString(ParticleEmissionNode::StaticNodeName));
+            Deki::HashString(ParticleEmissionNode::StaticNodeName));
         if (!node || !node->instance) return nullptr;
         return static_cast<const ParticleEmissionNode*>(node->instance);
     }
@@ -57,14 +57,14 @@ class ParticleEmitterCustomEditor : public CustomEditor
 public:
     const char* GetComponentName() const override { return "ParticleEmitterComponent"; }
 
-    bool WantsInspectorOverride(DekiComponent* /*comp*/) override { return true; }
+    bool WantsInspectorOverride(Deki::Component* /*comp*/) override { return true; }
 
-    void OnEditorUpdate(DekiComponent* comp) override
+    void OnEditorUpdate(Deki::Component* comp) override
     {
         auto* emitter = static_cast<ParticleEmitterComponent*>(comp);
         if (!emitter) return;
 
-        // Measure the editor frame delta locally — DekiTime::GetDeltaTimeF()
+        // Measure the editor frame delta locally — Deki::Time::GetDeltaTimeF()
         // only ticks in Play mode, so in edit mode it always reads 0 and the
         // sim's dt > 0 guard would no-op forever.
         auto now = std::chrono::steady_clock::now();
@@ -87,7 +87,7 @@ public:
         emitter->Simulate(dtSeconds * GetSpeed(emitter));
     }
 
-    void OnInspectorGUI(DekiComponent* comp) override
+    void OnInspectorGUI(Deki::Component* comp) override
     {
         auto* emitter = static_cast<ParticleEmitterComponent*>(comp);
         if (!emitter) return;
@@ -101,7 +101,7 @@ public:
     // OnDrawGizmosSelected fires only when the emitter's owning object is
     // selected — same convention as Unity's "show shape only when selected".
     // -------------------------------------------------------------------
-    void OnDrawGizmosSelected(DekiComponent* comp) override
+    void OnDrawGizmosSelected(Deki::Component* comp) override
     {
         auto* emitter = static_cast<ParticleEmitterComponent*>(comp);
         if (!emitter || !emitter->GetOwner()) return;

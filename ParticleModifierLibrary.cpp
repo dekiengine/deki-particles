@@ -81,7 +81,7 @@ void EmissionEmit(const void* data, void* /*state*/, ParticleEmitterComponent& e
             float u = emitter.rng.NextFloat01();
             float v = emitter.rng.NextFloat01();
             float r = d->radius * std::sqrt(u);
-            float theta = v * DekiMath::kTwoPi;
+            float theta = v * Deki::Math::kTwoPi;
             ox = r * std::cos(theta);
             oy = r * std::sin(theta);
             break;
@@ -98,7 +98,7 @@ void EmissionEmit(const void* data, void* /*state*/, ParticleEmitterComponent& e
 
     if (emitter.worldSpace && emitter.GetOwner())
     {
-        DekiObject* o = emitter.GetOwner();
+        Deki::Object* o = emitter.GetOwner();
         emitter.pool.posX[i] = o->GetWorldX() + ox;
         emitter.pool.posY[i] = o->GetWorldY() + oy;
     }

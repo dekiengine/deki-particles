@@ -81,7 +81,7 @@ public:
 
     bool GetContentExtents(float& outWidth, float& outHeight) const override;
 
-    bool RenderContent(const DekiObject* owner,
+    bool RenderContent(const Deki::Object* owner,
                        QuadBlit::Source& outSource,
                        float& outPivotX,
                        float& outPivotY,
@@ -164,7 +164,7 @@ private:
         float ppm;  // composite pixels per world metre (the sprite's)
     };
     bool ComputeBounds(const Sprite* spr, float anchorX, float anchorY, Bounds& out) const;
-    void AnchorFor(const DekiObject* owner, float& anchorX, float& anchorY) const;
+    void AnchorFor(const Deki::Object* owner, float& anchorX, float& anchorY) const;
 };
 
 // Generated property metadata

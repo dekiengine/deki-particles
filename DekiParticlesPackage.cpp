@@ -26,7 +26,7 @@
 
 extern void DekiParticles_RegisterComponents();
 extern int  DekiParticles_GetAutoComponentCount();
-extern const DekiComponentMeta* DekiParticles_GetAutoComponentMeta(int index);
+extern const Deki::ComponentMeta* DekiParticles_GetAutoComponentMeta(int index);
 
 // Defined in editor/ParticleGraphEditor.cpp (re-registers the graph domain).
 extern "C" void DekiParticles_RegisterEditorGraphDomain(void);
@@ -44,9 +44,9 @@ namespace
     void RegisterParticleNodeType()
     {
         SceneFormat::NodeFactory::Instance().Register(
-            DekiHashString(T::StaticNodeName),
+            Deki::HashString(T::StaticNodeName),
             []() -> void* { return new T(); },
-            [](void* p, SceneFormat::SceneMsgPackParser& parser, uint32_t mapSize) -> bool {
+            [](void* p, Deki::SceneFormat::SceneMsgPackParser& parser, uint32_t mapSize) -> bool {
                 return DeserializeMsgPack(*static_cast<T*>(p), parser, mapSize); },
             [](void* p) { delete static_cast<T*>(p); });
         NodeTypeRegistry::Instance().Register(&T::GetNodeMeta(), sizeof(DekiNodeMeta));
@@ -114,7 +114,7 @@ DEKI_PLUGIN_API int DekiPlugin_GetComponentCount(void)
     return DekiParticles_GetAutoComponentCount();
 }
 
-DEKI_PLUGIN_API const DekiComponentMeta* DekiPlugin_GetComponentMeta(int index)
+DEKI_PLUGIN_API const Deki::ComponentMeta* DekiPlugin_GetComponentMeta(int index)
 {
     return DekiParticles_GetAutoComponentMeta(index);
 }

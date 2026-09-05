@@ -38,8 +38,8 @@
 namespace
 {
 
-constexpr float kPi    = DekiMath::kPi;
-constexpr float kTwoPi = DekiMath::kTwoPi;
+constexpr float kPi    = Deki::Math::kPi;
+constexpr float kTwoPi = Deki::Math::kTwoPi;
 
 // ---------------------------------------------------------------------------
 // Palette. Local on purpose: a package must not reach into the editor's theme
@@ -652,14 +652,14 @@ void DrawRotationOverLifetime(const ParticleRotationOverLifetimeNode& n, const P
 // Dispatch
 // ---------------------------------------------------------------------------
 
-constexpr uint32_t kEmissionId  = DekiHashString(ParticleEmissionNode::StaticNodeName);
-constexpr uint32_t kVelocityId  = DekiHashString(ParticleInitialVelocityNode::StaticNodeName);
-constexpr uint32_t kRotationId  = DekiHashString(ParticleInitialRotationNode::StaticNodeName);
-constexpr uint32_t kGravityId   = DekiHashString(ParticleGravityNode::StaticNodeName);
-constexpr uint32_t kDragId      = DekiHashString(ParticleDragNode::StaticNodeName);
-constexpr uint32_t kSizeId      = DekiHashString(ParticleSizeOverLifetimeNode::StaticNodeName);
-constexpr uint32_t kColorId     = DekiHashString(ParticleColorOverLifetimeNode::StaticNodeName);
-constexpr uint32_t kSpinId      = DekiHashString(ParticleRotationOverLifetimeNode::StaticNodeName);
+constexpr uint32_t kEmissionId  = Deki::HashString(ParticleEmissionNode::StaticNodeName);
+constexpr uint32_t kVelocityId  = Deki::HashString(ParticleInitialVelocityNode::StaticNodeName);
+constexpr uint32_t kRotationId  = Deki::HashString(ParticleInitialRotationNode::StaticNodeName);
+constexpr uint32_t kGravityId   = Deki::HashString(ParticleGravityNode::StaticNodeName);
+constexpr uint32_t kDragId      = Deki::HashString(ParticleDragNode::StaticNodeName);
+constexpr uint32_t kSizeId      = Deki::HashString(ParticleSizeOverLifetimeNode::StaticNodeName);
+constexpr uint32_t kColorId     = Deki::HashString(ParticleColorOverLifetimeNode::StaticNodeName);
+constexpr uint32_t kSpinId      = Deki::HashString(ParticleRotationOverLifetimeNode::StaticNodeName);
 
 float GizmoHeight(uint32_t typeId, const void* instance)
 {

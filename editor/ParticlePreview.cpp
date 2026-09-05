@@ -90,7 +90,7 @@ void StrokeCircle(const NodeGraphPreviewCanvas& canvas, float cx, float cy, floa
     float px = cx + r, py = cy;
     for (int i = 1; i <= seg; ++i)
     {
-        const float a = (DekiMath::kTwoPi * static_cast<float>(i)) / static_cast<float>(seg);
+        const float a = (Deki::Math::kTwoPi * static_cast<float>(i)) / static_cast<float>(seg);
         const float qx = cx + std::cos(a) * r;
         const float qy = cy - std::sin(a) * r;
         canvas.line(canvas.ctx, px, py, qx, qy, rgba, thickness);
@@ -109,7 +109,7 @@ void DrawEmitterShape(const NodeGraphPreviewGraph& graph, float cx, float cy,
                       float pixelsPerMeter, const NodeGraphPreviewCanvas& canvas)
 {
     const NodeGraphPreviewNode* node =
-        graph.FindFirstOfType(DekiHashString(ParticleEmissionNode::StaticNodeName));
+        graph.FindFirstOfType(Deki::HashString(ParticleEmissionNode::StaticNodeName));
     if (!node || !node->instance)
         return;
     const auto& e = *static_cast<const ParticleEmissionNode*>(node->instance);
@@ -186,7 +186,7 @@ void PreviewTick(void* preview, const NodeGraphPreviewGraph& graph, float dt,
         const char* error = nullptr;
         // A half-wired graph is the normal state while authoring, so a failed
         // build is not worth logging here: the panel simply shows nothing.
-        if (BuildParticleChain(graph, DekiHashString(ParticleEmitNode::StaticNodeName),
+        if (BuildParticleChain(graph, Deki::HashString(ParticleEmitNode::StaticNodeName),
                                chain, &error))
         {
             p->emitter.AdoptChain(std::move(chain));

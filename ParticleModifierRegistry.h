@@ -49,7 +49,7 @@ struct ParticleModifierOps
 };
 
 /**
- * @brief typeId (DekiHashString of the node name) -> runtime ops.
+ * @brief typeId (Deki::HashString of the node name) -> runtime ops.
  *
  * The data structs self-register into NodeFactory via their generated code;
  * this registry carries the behavior half. A node type in a "Particles/"
@@ -82,6 +82,6 @@ private:
     static struct ClassName##_ParticleModifierRegistrar { \
         ClassName##_ParticleModifierRegistrar() { \
             ParticleModifierRegistry::Instance().Register( \
-                DekiHashString(ClassName::StaticNodeName), Ops); \
+                ::Deki::HashString(ClassName::StaticNodeName), Ops); \
         } \
     } s_##ClassName##_ParticleModifierRegistrar

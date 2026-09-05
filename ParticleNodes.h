@@ -150,14 +150,14 @@ public:
     float speedMax = 2.0f;            // m/s
 
     DEKI_EXPORT
-    DEKI_RANGE(-DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_RANGE(-Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float angleMin = 0.0f;            // radians, 0 = +X right, pi/2 = +Y up
 
     DEKI_EXPORT
-    DEKI_RANGE(-DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_RANGE(-Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
-    float angleMax = DekiMath::kTwoPi;
+    float angleMax = Deki::Math::kTwoPi;
 };
 
 // Sets a new particle's angle and spin rate, and integrates that spin every
@@ -173,22 +173,22 @@ public:
     DEKI_EXPORT bool enabled = true;
 
     DEKI_EXPORT
-    DEKI_RANGE(-DekiMath::kTwoPi, DekiMath::kTwoPi)
+    DEKI_RANGE(-Deki::Math::kTwoPi, Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float rotationMin = 0.0f;          // radians
 
     DEKI_EXPORT
-    DEKI_RANGE(-DekiMath::kTwoPi, DekiMath::kTwoPi)
+    DEKI_RANGE(-Deki::Math::kTwoPi, Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float rotationMax = 0.0f;
 
     DEKI_EXPORT
-    DEKI_RANGE(-2.0f * DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float spinSpeedMin = 0.0f;         // radians per second
 
     DEKI_EXPORT
-    DEKI_RANGE(-2.0f * DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float spinSpeedMax = 0.0f;
 };
@@ -286,12 +286,12 @@ public:
     DEKI_EXPORT bool enabled = true;
 
     DEKI_EXPORT
-    DEKI_RANGE(-2.0f * DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float spinSpeedAt0 = 0.0f;          // radians/sec at birth
 
     DEKI_EXPORT
-    DEKI_RANGE(-2.0f * DekiMath::kTwoPi, 2.0f * DekiMath::kTwoPi)
+    DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
     float spinSpeedAt1 = 0.0f;          // radians/sec at death
 };
