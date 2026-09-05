@@ -1,5 +1,7 @@
 # Deki Particles
 
+Documentation: https://dekiengine.github.io/deki-particles/ (components and properties, generated from the code)
+
 Particle system for the Deki Engine: emission shapes (point/circle/rect), gravity, drag, initial velocity, and lifetime/size/color/rotation modifiers.
 
 An effect is a **Particle Effect** asset, authored in the editor's Node Graph window: an Emitter node followed by a chain of modifier nodes, wired in the order they run. `ParticleEmitterComponent` references that asset and walks it once when it starts, so the per-frame cost is exactly the modifiers you wired, with no graph interpretation in the loop. One graph drives any number of emitters.
