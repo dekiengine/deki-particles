@@ -16,7 +16,6 @@
 
 ParticleEmitterComponent::ParticleEmitterComponent()
 {
-    SetNeedsUpdate(true);
     rng.Seed((uint32_t)(uintptr_t)this);
 }
 
