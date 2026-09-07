@@ -1,7 +1,7 @@
 {
   "id": "deki-particles",
   "displayName": "Particles",
-  "minEngine": "0.10.0",
+  "minEngine": "0.11.0",
   "buildDefine": "DEKI_PACKAGE_PARTICLES",
   "requires": [
     "deki-nodegraph",
@@ -14,8 +14,8 @@
       "displayName": "Particle Emitter",
       "buildDefine": "DEKI_FEATURE_PARTICLE_EMITTER",
       "defaultEnabled": true,
-      "componentGuids": [
-        "b1e0e1a0-1111-4002-9002-000000000010"
+      "componentTypes": [
+        "ParticleEmitterComponent"
       ]
     }
   ]

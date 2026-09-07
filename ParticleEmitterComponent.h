@@ -44,11 +44,11 @@
  * with no registered behavior refuses to build its chain, loudly. maxParticles
  * is honored exactly.
  */
+DEKI_CATEGORY("Particles")
+DEKI_DESCRIPTION("Spawns and draws particles, following a particle graph asset.")
 class DEKI_PARTICLES_API ParticleEmitterComponent : public RendererComponent
 {
 public:
-    DEKI_COMPONENT(ParticleEmitterComponent, RendererComponent, "Particles", "b1e0e1a0-1111-4002-9002-000000000010", "DEKI_FEATURE_PARTICLE_EMITTER")
-    DEKI_DESCRIPTION("Spawns and draws particles, following a particle graph asset.")
 
     DEKI_EXPORT
     Deki::AssetRef<Sprite> sprite;
@@ -168,4 +168,3 @@ private:
 };
 
 // Generated property metadata
-#include "generated/ParticleEmitterComponent.gen.h"
