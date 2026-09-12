@@ -1,4 +1,5 @@
 #include "ParticleEmitterComponent.h"
+#include <deki/providers/Memory.h>
 #include "PixelFormat.h"
 #include "ParticleNodes.h"
 #include "ParticleSystem.h"
@@ -226,7 +227,7 @@ void ParticleEmitterComponent::UnloadAssets()
 
 void ParticleEmitterComponent::FreeBboxBuf()
 {
-    delete[] m_BboxBuf;
+    Deki::Memory::Free(m_BboxBuf);
     m_BboxBuf = nullptr;
     m_BboxBufBytes = 0;
 }
@@ -369,9 +370,18 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
     const int needBytes = bboxW * bboxH * bytesPerPixel;
     if (needBytes > m_BboxBufBytes)
     {
-        delete[] m_BboxBuf;
-        m_BboxBuf = new uint8_t[needBytes];
-        m_BboxBufBytes = needBytes;
+        Deki::Memory::Free(m_BboxBuf);
+        m_BboxBuf = Deki::Memory::AllocateArray<uint8_t>(static_cast<size_t>(needBytes),
+                                                        Deki::MemoryUse::Buffer,
+                                                        "ParticleEmitter::bbox");
+        m_BboxBufBytes = m_BboxBuf ? needBytes : 0;
+    }
+    if (!m_BboxBuf)
+    {
+        DEKI_LOG_WARNING("ParticleEmitter: no room for a %dx%d bbox (%d bytes); "
+                         "not drawing this emitter",
+                         bboxW, bboxH, needBytes);
+        return false;
     }
     // memset to 0 → alpha=0 (fully transparent) regardless of byte order.
     std::memset(m_BboxBuf, 0, needBytes);

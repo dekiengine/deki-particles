@@ -3,6 +3,7 @@
 #include "ParticleModifierRegistry.h"
 
 #include <cstdint>
+#include <deki/providers/Memory.h>
 #include <vector>
 
 /**
@@ -28,7 +29,7 @@ struct ParticleChainEntry
 inline void FreeParticleChain(std::vector<ParticleChainEntry>& chain)
 {
     for (ParticleChainEntry& e : chain)
-        delete[] static_cast<uint8_t*>(e.state);
+        Deki::Memory::Free(e.state);
     chain.clear();
 }
 
@@ -76,7 +77,19 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId,
         e.ops  = ops;
         // Zero-initialized: every modifier's state starts at "nothing has
         // happened yet", which is what a fresh accumulator or latch means.
-        e.state = ops->stateSize ? new uint8_t[ops->stateSize]{} : nullptr;
+        // Memory zeroes what it hands back, so the {} is not lost. A modifier
+        // whose state will not fit is refused rather than run uninitialised.
+        e.state = ops->stateSize
+                      ? Deki::Memory::AllocateArray<uint8_t>(ops->stateSize,
+                                                            Deki::MemoryUse::Hot,
+                                                            "ParticleChain::state")
+                      : nullptr;
+        if (ops->stateSize && !e.state)
+        {
+            FreeParticleChain(out);
+            *outError = "no room for a modifier's state";
+            return false;
+        }
         out.push_back(e);
 
         node = next;
