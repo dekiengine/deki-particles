@@ -176,8 +176,8 @@ void ParticleEmitterComponent::Simulate(float dt)
     // modifiers attached, so that a programmatic Spawn() with non-zero
     // velocity still moves.
     int alive = pool.AliveCount();
-    float* px = pool.posX; float* py = pool.posY;
-    float* vx = pool.velX; float* vy = pool.velY;
+    float* px = pool.posX.Data(); float* py = pool.posY.Data();
+    float* vx = pool.velX.Data(); float* vy = pool.velY.Data();
     // dtN was already converted from `dt` earlier in this function for the
     // age-aging loop — reuse it here instead of redefining.
     for (int i = 0; i < alive; ++i)
@@ -268,9 +268,9 @@ bool ParticleEmitterComponent::ComputeBounds(const Sprite* spr, float anchorX, f
     // Rotation expands the box up to sqrt(2). 1.45 leaves a one-pixel guard band.
     constexpr float kRotPad = 1.45f;
     const bool hasScale = pool.HasScale();
-    const float* px = pool.posX;
-    const float* py = pool.posY;
-    const float* ps = pool.scale;
+    const float* px = pool.posX.Data();
+    const float* py = pool.posY.Data();
+    const float* ps = pool.scale.Data();
 
     float minX = 1e9f, minY = 1e9f;
     float maxX = -1e9f, maxY = -1e9f;
@@ -394,7 +394,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
         spr->data, spr->width, spr->height,
         srcBpp, spr->hasAlpha, isRGB565,
         /*ownsPixels=*/false,
-        spr->alphaRowSpans);
+        spr->alphaRowSpans.Data());
     if (spr->hasChromaKey)
     {
         src.hasChromaKey = true;
@@ -403,7 +403,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
         src.keyB = spr->transparentB;
         if (isRGB565)
             DekiPixel::QuantizeRGB565(src.keyR, src.keyG, src.keyB);
-        src.chromaRowSpans = spr->chromaRowSpans;
+        src.chromaRowSpans = spr->chromaRowSpans.Data();
     }
 
     // Per-particle blit into the composite. Its clip stack is independent of
@@ -416,10 +416,10 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
     const bool hasScale = pool.HasScale();
     const bool hasRotation = pool.HasRotation();
     const bool hasTint = pool.HasTint();
-    const float* px = pool.posX;
-    const float* py = pool.posY;
-    const float* ps = pool.scale;
-    const float* pr = pool.rotation;
+    const float* px = pool.posX.Data();
+    const float* py = pool.posY.Data();
+    const float* ps = pool.scale.Data();
+    const float* pr = pool.rotation.Data();
 
     for (int i = 0; i < n; ++i)
     {

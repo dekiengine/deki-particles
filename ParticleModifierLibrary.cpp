@@ -190,8 +190,8 @@ void InitialRotationSimulate(const void* /*data*/, void* /*state*/, ParticleEmit
     // Integrate spin so per-particle rotationSpeed has effect even when no
     // Rotation over Lifetime node is in the chain.
     int n = emitter.pool.AliveCount();
-    float* rot = emitter.pool.rotation;
-    float* spd = emitter.pool.rotationSpeed;
+    float* rot = emitter.pool.rotation.Data();
+    float* spd = emitter.pool.rotationSpeed.Data();
     for (int i = 0; i < n; ++i)
         rot[i] += spd[i] * dt;
 }
@@ -204,8 +204,8 @@ void GravitySimulate(const void* data, void* /*state*/, ParticleEmitterComponent
 {
     const auto* d = static_cast<const ParticleGravityNode*>(data);
     int n = emitter.pool.AliveCount();
-    float* vx = emitter.pool.velX;
-    float* vy = emitter.pool.velY;
+    float* vx = emitter.pool.velX.Data();
+    float* vy = emitter.pool.velY.Data();
     // Fold dt into the delta once, outside the hot loop.
     float dvx = d->gravityX * dt;
     float dvy = d->gravityY * dt;
@@ -227,8 +227,8 @@ void DragSimulate(const void* data, void* /*state*/, ParticleEmitterComponent& e
     float k = 1.0f - d->drag * dt;
     if (k < 0.0f) k = 0.0f;
     int n = emitter.pool.AliveCount();
-    float* vx = emitter.pool.velX;
-    float* vy = emitter.pool.velY;
+    float* vx = emitter.pool.velX.Data();
+    float* vy = emitter.pool.velY.Data();
     for (int i = 0; i < n; ++i)
     {
         vx[i] *= k;
@@ -249,9 +249,9 @@ void SizeOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitter
 {
     const auto* d = static_cast<const ParticleSizeOverLifetimeNode*>(data);
     int n = emitter.pool.AliveCount();
-    float* age  = emitter.pool.age;
-    float* life = emitter.pool.lifetime;
-    float* sc   = emitter.pool.scale;
+    float* age  = emitter.pool.age.Data();
+    float* life = emitter.pool.lifetime.Data();
+    float* sc   = emitter.pool.scale.Data();
     float s0 = d->sizeAt0;
     float ds = d->sizeAt1 - d->sizeAt0;
     for (int i = 0; i < n; ++i)
@@ -275,12 +275,12 @@ void ColorOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitte
 {
     const auto* d = static_cast<const ParticleColorOverLifetimeNode*>(data);
     int n = emitter.pool.AliveCount();
-    float* age  = emitter.pool.age;
-    float* life = emitter.pool.lifetime;
-    uint8_t* tR = emitter.pool.tintR;
-    uint8_t* tG = emitter.pool.tintG;
-    uint8_t* tB = emitter.pool.tintB;
-    uint8_t* tA = emitter.pool.tintA;
+    float* age  = emitter.pool.age.Data();
+    float* life = emitter.pool.lifetime.Data();
+    uint8_t* tR = emitter.pool.tintR.Data();
+    uint8_t* tG = emitter.pool.tintG.Data();
+    uint8_t* tB = emitter.pool.tintB.Data();
+    uint8_t* tA = emitter.pool.tintA.Data();
 
     int r0 = d->colorAt0.r, g0 = d->colorAt0.g, b0 = d->colorAt0.b, a0 = d->colorAt0.a;
     int dr = (int)d->colorAt1.r - r0;
@@ -321,9 +321,9 @@ void RotationOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmi
     // so integration is a simple unit-agnostic accumulate.
     float a0 = d->spinSpeedAt0;
     float da = d->spinSpeedAt1 - a0;
-    float* age  = emitter.pool.age;
-    float* life = emitter.pool.lifetime;
-    float* rot  = emitter.pool.rotation;
+    float* age  = emitter.pool.age.Data();
+    float* life = emitter.pool.lifetime.Data();
+    float* rot  = emitter.pool.rotation.Data();
     for (int i = 0; i < n; ++i)
     {
         float t = (life[i] > 0.0f) ? (age[i] / life[i]) : 0.0f;

@@ -4,7 +4,7 @@
 #include <cstring>
 #include <deki/Math.h>
 #include <deki/LogSystem.h>
-#include <deki/providers/Memory.h>
+#include <deki/providers/Buffer.h>
 
 namespace deki_particles {
 
@@ -32,15 +32,8 @@ public:
     ParticlePool(const ParticlePool&) = delete;
     ParticlePool& operator=(const ParticlePool&) = delete;
 
-private:
-    // Every column is the same shape: capacity floats, walked every frame.
-    static float* Column(int capacity, const char* context)
-    {
-        return Deki::Memory::AllocateArray<float>(static_cast<size_t>(capacity),
-                                                 Deki::MemoryUse::Hot, context);
-    }
-
-public:    void SetCapacity(int newCapacity)
+public:
+    void SetCapacity(int newCapacity)
     {
         if (newCapacity == m_Capacity) return;
         Free();
@@ -51,12 +44,12 @@ public:    void SetCapacity(int newCapacity)
         // Time columns (age/lifetime) are seconds; spatial columns are meters.
         // Hot: every column is walked every frame. Memory zeroes what it hands
         // back, so the {} these replace is not lost.
-        posX     = Column(newCapacity, "ParticlePool::posX");
-        posY     = Column(newCapacity, "ParticlePool::posY");
-        velX     = Column(newCapacity, "ParticlePool::velX");
-        velY     = Column(newCapacity, "ParticlePool::velY");
-        age      = Column(newCapacity, "ParticlePool::age");
-        lifetime = Column(newCapacity, "ParticlePool::lifetime");
+        posX.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::posX");
+        posY.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::posY");
+        velX.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::velX");
+        velY.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::velY");
+        age.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::age");
+        lifetime.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::lifetime");
 
         // All or nothing: a pool missing one column would still be indexed
         // by every update.
@@ -108,12 +101,12 @@ public:    void SetCapacity(int newCapacity)
     void EnsureRotation()
     {
         if (m_HasRotation || m_Capacity <= 0) return;
-        rotation      = Column(m_Capacity, "ParticlePool::rotation");
-        rotationSpeed = Column(m_Capacity, "ParticlePool::rotationSpeed");
+        rotation.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::rotation");
+        rotationSpeed.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::rotationSpeed");
         if (!rotation || !rotationSpeed)
         {
-            Deki::Memory::Free(rotation);      rotation = nullptr;
-            Deki::Memory::Free(rotationSpeed); rotationSpeed = nullptr;
+            rotation.Reset();
+            rotationSpeed.Reset();
             return;  // stays disabled; particles simply do not rotate
         }
         m_HasRotation = true;
@@ -121,7 +114,7 @@ public:    void SetCapacity(int newCapacity)
     void EnsureScale()
     {
         if (m_HasScale || m_Capacity <= 0) return;
-        scale = Column(m_Capacity, "ParticlePool::scale");
+        scale.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::scale");
         if (!scale) return;  // stays disabled; particles keep their size
         for (int i = 0; i < m_Capacity; ++i) scale[i] = 1.0f;
         m_HasScale = true;
@@ -129,22 +122,22 @@ public:    void SetCapacity(int newCapacity)
     void EnsureTint()
     {
         if (m_HasTint || m_Capacity <= 0) return;
-        tintR = Deki::Memory::AllocateArray<uint8_t>(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintR");
-        tintG = Deki::Memory::AllocateArray<uint8_t>(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintG");
-        tintB = Deki::Memory::AllocateArray<uint8_t>(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintB");
-        tintA = Deki::Memory::AllocateArray<uint8_t>(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintA");
+        tintR.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintR");
+        tintG.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintG");
+        tintB.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintB");
+        tintA.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintA");
         if (!tintR || !tintG || !tintB || !tintA)
         {
-            Deki::Memory::Free(tintR); tintR = nullptr;
-            Deki::Memory::Free(tintG); tintG = nullptr;
-            Deki::Memory::Free(tintB); tintB = nullptr;
-            Deki::Memory::Free(tintA); tintA = nullptr;
+            tintR.Reset();
+            tintG.Reset();
+            tintB.Reset();
+            tintA.Reset();
             return;  // stays disabled; particles render untinted
         }
-        std::memset(tintR, 255, m_Capacity);
-        std::memset(tintG, 255, m_Capacity);
-        std::memset(tintB, 255, m_Capacity);
-        std::memset(tintA, 255, m_Capacity);
+        std::memset(tintR.Data(), 255, m_Capacity);
+        std::memset(tintG.Data(), 255, m_Capacity);
+        std::memset(tintB.Data(), 255, m_Capacity);
+        std::memset(tintA.Data(), 255, m_Capacity);
         m_HasTint = true;
     }
 
@@ -154,22 +147,22 @@ public:    void SetCapacity(int newCapacity)
 
     // Always-present columns (public for tight inner loops). Spatial columns
     // in meters, time columns (age/lifetime) in seconds.
-    float* posX = nullptr;
-    float* posY = nullptr;
-    float* velX = nullptr;
-    float* velY = nullptr;
-    float* age = nullptr;
-    float* lifetime = nullptr;
+    Deki::Buffer<float> posX;
+    Deki::Buffer<float> posY;
+    Deki::Buffer<float> velX;
+    Deki::Buffer<float> velY;
+    Deki::Buffer<float> age;
+    Deki::Buffer<float> lifetime;
 
     // Optional columns (nullptr until corresponding Ensure* called).
     // rotation is in radians (engine convention).
-    float* rotation = nullptr;        // radians
-    float* rotationSpeed = nullptr;   // radians/sec
-    float* scale = nullptr;
-    uint8_t*    tintR = nullptr;
-    uint8_t*    tintG = nullptr;
-    uint8_t*    tintB = nullptr;
-    uint8_t*    tintA = nullptr;
+    Deki::Buffer<float> rotation;        // radians
+    Deki::Buffer<float> rotationSpeed;   // radians/sec
+    Deki::Buffer<float> scale;
+    Deki::Buffer<uint8_t> tintR;
+    Deki::Buffer<uint8_t> tintG;
+    Deki::Buffer<uint8_t> tintB;
+    Deki::Buffer<uint8_t> tintA;
 
 private:
     int  m_Capacity = 0;
@@ -180,19 +173,19 @@ private:
 
     void Free()
     {
-        Deki::Memory::Free(posX);          posX = nullptr;
-        Deki::Memory::Free(posY);          posY = nullptr;
-        Deki::Memory::Free(velX);          velX = nullptr;
-        Deki::Memory::Free(velY);          velY = nullptr;
-        Deki::Memory::Free(age);           age = nullptr;
-        Deki::Memory::Free(lifetime);      lifetime = nullptr;
-        Deki::Memory::Free(rotation);      rotation = nullptr;
-        Deki::Memory::Free(rotationSpeed); rotationSpeed = nullptr;
-        Deki::Memory::Free(scale);         scale = nullptr;
-        Deki::Memory::Free(tintR);         tintR = nullptr;
-        Deki::Memory::Free(tintG);         tintG = nullptr;
-        Deki::Memory::Free(tintB);         tintB = nullptr;
-        Deki::Memory::Free(tintA);         tintA = nullptr;
+        posX.Reset();
+        posY.Reset();
+        velX.Reset();
+        velY.Reset();
+        age.Reset();
+        lifetime.Reset();
+        rotation.Reset();
+        rotationSpeed.Reset();
+        scale.Reset();
+        tintR.Reset();
+        tintG.Reset();
+        tintB.Reset();
+        tintA.Reset();
         m_HasRotation = m_HasScale = m_HasTint = false;
         m_AliveCount = 0;
     }
