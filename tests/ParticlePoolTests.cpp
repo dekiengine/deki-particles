@@ -35,30 +35,29 @@ public:
     bool Initialize() override { return true; }
     void Shutdown() override {}
 
-    bool HasExternalRAM() const override { return false; }
-    size_t GetTotalExternalRAM() const override { return 0; }
-    size_t GetAvailableExternalRAM() const override { return 0; }
-    void* AllocateExternal(size_t) override { return nullptr; }
-    void FreeExternal(void*) override {}
-    bool IsExternalPointer(void*) const override { return false; }
-
-    void* AllocateInternal(size_t size) override
+    // One heap, a fixed number of allocations, then refusal — which is the
+    // only way to reach the out-of-memory paths from a host test, where a
+    // 64-bit heap will commit anything a size_t can express.
+    bool Serves(Deki::MemoryRegion region) const override
     {
-        if (m_Allowed <= 0)
+        return region == Deki::Mem::Internal || region == Deki::Mem::External;
+    }
+
+    void* Allocate(Deki::MemoryRegion region, size_t bytes, bool needsDma) override
+    {
+        (void)needsDma;
+        if (!Serves(region) || m_Allowed <= 0)
             return nullptr;
         --m_Allowed;
-        return malloc(size);
+        return malloc(bytes);
     }
-    void FreeInternal(void* ptr) override { free(ptr); }
 
-    // Draws on the same budget: this provider models a heap running out, and a
-    // DMA request comes from the same pool.
-    void* AllocateDMA(size_t size) override { return AllocateInternal(size); }
+    void Free(Deki::MemoryRegion, void* ptr) override { free(ptr); }
 
-    // Not modelled. The budget counts allocations rather than bytes, so there
-    // is no byte figure to report, and inventing one would put a fiction in
-    // the out-of-memory line these tests provoke.
-    size_t GetAvailableInternalRAM() const override { return 0; }
+    // Not modelled: the budget counts allocations rather than bytes, so there
+    // is no byte figure to report and a made-up one would show up in the
+    // out-of-memory line these tests provoke.
+    size_t GetAvailable(Deki::MemoryRegion) const override { return 0; }
 
 private:
     int m_Allowed;
@@ -405,4 +404,74 @@ TEST(ParticlePool, ARequiredPoolThatFitsIsStillUsableAfterAnOptionalOneDoesNot)
     EXPECT_EQ(pool.Spawn(), 0);
     pool.posX[0] = 4.0f;
     EXPECT_FLOAT_EQ(pool.posX[0], 4.0f);
+}
+
+// --- a package defining its own memory region --------------------------------
+// The engine ships "internal" and "external" and nothing else. A board with
+// memory the engine has never heard of - RTC RAM that survives deep sleep, a
+// tightly-coupled scratch bank, a non-cacheable window for DMA - is described
+// by the package that supports that board, with no engine release involved.
+//
+// This lives in a package test rather than the engine's because that is the
+// case worth proving: the region is defined here, in package code, compiled
+// separately, and the engine carries it without knowing the name.
+
+namespace
+{
+
+// Deki::Mem is where the engine puts its own, and a package is free to extend
+// it or to use its own namespace. The namespace is convention; the identity is
+// the hashed name.
+constexpr Deki::MemoryRegion kScratch = Deki::Region("particles.scratch");
+
+// A board provider that serves the package's region alongside the usual ones.
+class ScratchProvider : public Deki::IMemoryProvider
+{
+public:
+    bool Initialize() override { return true; }
+    void Shutdown() override {}
+
+    bool Serves(Deki::MemoryRegion region) const override
+    {
+        return region == Deki::Mem::Internal || region == kScratch;
+    }
+
+    void* Allocate(Deki::MemoryRegion region, size_t bytes, bool) override
+    {
+        if (!Serves(region)) return nullptr;
+        if (region == kScratch) ++scratchCalls;
+        return malloc(bytes);
+    }
+
+    void Free(Deki::MemoryRegion, void* ptr) override { free(ptr); }
+    size_t GetAvailable(Deki::MemoryRegion region) const override
+    {
+        return Serves(region) ? 64 * 1024 : 0;
+    }
+
+    int scratchCalls = 0;
+};
+
+}  // namespace
+
+TEST(PackageDefinedRegion, TheEngineCarriesARegionItHasNeverHeardOf)
+{
+    auto* provider = new ScratchProvider();
+    Deki::Memory::SetBackend(provider);
+
+    Deki::Buffer<uint32_t> b;
+    ASSERT_TRUE(b.Allocate(16, kScratch)) << "the provider serves it, so it must succeed";
+    EXPECT_EQ(provider->scratchCalls, 1);
+
+    b.Reset();  // and Free routes back to the same region, from the header
+    Deki::Memory::SetBackend(nullptr);
+}
+
+TEST(PackageDefinedRegion, ItIsAConstantExpressionSoItCostsNothing)
+{
+    // Usable in a static_assert and in a switch label, which is what lets a
+    // provider dispatch on it without a runtime lookup or a registration call.
+    static_assert(kScratch.id == Deki::HashName("particles.scratch"));
+    static_assert(kScratch != Deki::Mem::Internal);
+    EXPECT_STREQ(kScratch.name, "particles.scratch");
 }
