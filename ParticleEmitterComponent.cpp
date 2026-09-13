@@ -372,7 +372,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
     {
         Deki::Memory::Free(m_BboxBuf);
         m_BboxBuf = Deki::Memory::AllocateArray<uint8_t>(static_cast<size_t>(needBytes),
-                                                        Deki::External);
+                                                        Deki::Memory::External);
         m_BboxBufBytes = m_BboxBuf ? needBytes : 0;
     }
     if (!m_BboxBuf)

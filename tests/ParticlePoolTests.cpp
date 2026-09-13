@@ -38,12 +38,12 @@ public:
     // One heap, a fixed number of allocations, then refusal — which is the
     // only way to reach the out-of-memory paths from a host test, where a
     // 64-bit heap will commit anything a size_t can express.
-    bool Serves(Deki::MemoryRegion region) const override
+    bool Serves(Deki::Memory::Region region) const override
     {
-        return region == Deki::Internal || region == Deki::External;
+        return region == Deki::Memory::Internal || region == Deki::Memory::External;
     }
 
-    void* Allocate(Deki::MemoryRegion region, size_t bytes, bool needsDma) override
+    void* Allocate(Deki::Memory::Region region, size_t bytes, bool needsDma) override
     {
         (void)needsDma;
         if (!Serves(region) || m_Allowed <= 0)
@@ -52,12 +52,12 @@ public:
         return malloc(bytes);
     }
 
-    void Free(Deki::MemoryRegion, void* ptr) override { free(ptr); }
+    void Free(Deki::Memory::Region, void* ptr) override { free(ptr); }
 
     // Not modelled: the budget counts allocations rather than bytes, so there
     // is no byte figure to report and a made-up one would show up in the
     // out-of-memory line these tests provoke.
-    size_t GetAvailable(Deki::MemoryRegion) const override { return 0; }
+    size_t GetAvailable(Deki::Memory::Region) const override { return 0; }
 
 private:
     int m_Allowed;
@@ -422,7 +422,7 @@ namespace
 // Deki is where the engine puts its own, and a package is free to extend
 // it or to use its own namespace. The namespace is convention; the identity is
 // the hashed name.
-constexpr Deki::MemoryRegion kScratch = Deki::Region("particles.scratch");
+constexpr Deki::Memory::Region kScratch = Deki::Memory::Region("particles.scratch");
 
 // A board provider that serves the package's region alongside the usual ones.
 class ScratchProvider : public Deki::IMemoryProvider
@@ -431,20 +431,20 @@ public:
     bool Initialize() override { return true; }
     void Shutdown() override {}
 
-    bool Serves(Deki::MemoryRegion region) const override
+    bool Serves(Deki::Memory::Region region) const override
     {
-        return region == Deki::Internal || region == kScratch;
+        return region == Deki::Memory::Internal || region == kScratch;
     }
 
-    void* Allocate(Deki::MemoryRegion region, size_t bytes, bool) override
+    void* Allocate(Deki::Memory::Region region, size_t bytes, bool) override
     {
         if (!Serves(region)) return nullptr;
         if (region == kScratch) ++scratchCalls;
         return malloc(bytes);
     }
 
-    void Free(Deki::MemoryRegion, void* ptr) override { free(ptr); }
-    size_t GetAvailable(Deki::MemoryRegion region) const override
+    void Free(Deki::Memory::Region, void* ptr) override { free(ptr); }
+    size_t GetAvailable(Deki::Memory::Region region) const override
     {
         return Serves(region) ? 64 * 1024 : 0;
     }
@@ -472,6 +472,6 @@ TEST(PackageDefinedRegion, ItIsAConstantExpressionSoItCostsNothing)
     // Usable in a static_assert and in a switch label, which is what lets a
     // provider dispatch on it without a runtime lookup or a registration call.
     static_assert(kScratch.id == Deki::HashName("particles.scratch"));
-    static_assert(kScratch != Deki::Internal);
+    static_assert(kScratch != Deki::Memory::Internal);
     EXPECT_STREQ(kScratch.name, "particles.scratch");
 }

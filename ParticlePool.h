@@ -44,12 +44,12 @@ public:
         // Time columns (age/lifetime) are seconds; spatial columns are meters.
         // Internal because every column is walked every frame, and external
         // RAM is reached over SPI. Memory zeroes what it hands back.
-        posX.Allocate(newCapacity, Deki::Internal);
-        posY.Allocate(newCapacity, Deki::Internal);
-        velX.Allocate(newCapacity, Deki::Internal);
-        velY.Allocate(newCapacity, Deki::Internal);
-        age.Allocate(newCapacity, Deki::Internal);
-        lifetime.Allocate(newCapacity, Deki::Internal);
+        posX.Allocate(newCapacity, Deki::Memory::Internal);
+        posY.Allocate(newCapacity, Deki::Memory::Internal);
+        velX.Allocate(newCapacity, Deki::Memory::Internal);
+        velY.Allocate(newCapacity, Deki::Memory::Internal);
+        age.Allocate(newCapacity, Deki::Memory::Internal);
+        lifetime.Allocate(newCapacity, Deki::Memory::Internal);
 
         // All or nothing: a pool missing one column would still be indexed
         // by every update.
@@ -101,8 +101,8 @@ public:
     void EnsureRotation()
     {
         if (m_HasRotation || m_Capacity <= 0) return;
-        rotation.Allocate(m_Capacity, Deki::Internal);
-        rotationSpeed.Allocate(m_Capacity, Deki::Internal);
+        rotation.Allocate(m_Capacity, Deki::Memory::Internal);
+        rotationSpeed.Allocate(m_Capacity, Deki::Memory::Internal);
         if (!rotation || !rotationSpeed)
         {
             rotation.Reset();
@@ -114,7 +114,7 @@ public:
     void EnsureScale()
     {
         if (m_HasScale || m_Capacity <= 0) return;
-        scale.Allocate(m_Capacity, Deki::Internal);
+        scale.Allocate(m_Capacity, Deki::Memory::Internal);
         if (!scale) return;  // stays disabled; particles keep their size
         for (int i = 0; i < m_Capacity; ++i) scale[i] = 1.0f;
         m_HasScale = true;
@@ -122,10 +122,10 @@ public:
     void EnsureTint()
     {
         if (m_HasTint || m_Capacity <= 0) return;
-        tintR.Allocate(m_Capacity, Deki::Internal);
-        tintG.Allocate(m_Capacity, Deki::Internal);
-        tintB.Allocate(m_Capacity, Deki::Internal);
-        tintA.Allocate(m_Capacity, Deki::Internal);
+        tintR.Allocate(m_Capacity, Deki::Memory::Internal);
+        tintG.Allocate(m_Capacity, Deki::Memory::Internal);
+        tintB.Allocate(m_Capacity, Deki::Memory::Internal);
+        tintA.Allocate(m_Capacity, Deki::Memory::Internal);
         if (!tintR || !tintG || !tintB || !tintA)
         {
             tintR.Reset();
