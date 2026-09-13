@@ -6,7 +6,7 @@
 #include <deki/Object.h>
 #include <deki/Time.h>
 #include <deki/LogSystem.h>
-#include "deki-2d/Texture2D.h"
+#include <deki/assets/Texture2D.h>
 #include "deki-rendering/QuadBlit.h"
 #include <deki/Engine.h>  // for DekiColorFormat enum
 #include <algorithm>
@@ -386,12 +386,11 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
     std::memset(m_BboxBuf, 0, needBytes);
 
     // Source descriptor for the sprite — same for every particle blit.
-    const bool isRGB565 = (spr->format == Texture2D::TextureFormat::RGB565 ||
-                           spr->format == Texture2D::TextureFormat::RGB565A8);
-    const int srcBpp = Texture2D::GetBytesPerPixel(spr->format);
+    const bool isRGB565 = (spr->format == Deki::Texture2D::TextureFormat::RGB565 ||
+                           spr->format == Deki::Texture2D::TextureFormat::RGB565A8);
+    const int srcBpp = Deki::Texture2D::GetBytesPerPixel(spr->format);
     QuadBlit::Source src = QuadBlit::MakeSource(
-        spr->data, spr->width, spr->height,
-        srcBpp, spr->hasAlpha, isRGB565,
+        spr->data, spr->width, spr->height, QuadBlit::PixelLayout::FromTexture(spr->format, spr->hasAlpha),
         /*ownsPixels=*/false,
         spr->alphaRowSpans.Data());
     if (spr->hasChromaKey)
@@ -452,9 +451,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
     // frame, so ownsPixels=false. Its pixels are at the sprite's scale.
     outSource = QuadBlit::MakeSource(
         m_BboxBuf, bboxW, bboxH,
-        bytesPerPixel,
-        /*hasAlpha=*/true,
-        /*isRGB565=*/true,
+        QuadBlit::PixelLayout::RGB565A8(),   // the composite is built as RGB565A8
         /*ownsPixels=*/false);
     outSource.pixelsPerMeter = ppm;
 
