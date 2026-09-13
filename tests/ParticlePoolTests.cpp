@@ -40,7 +40,7 @@ public:
     // 64-bit heap will commit anything a size_t can express.
     bool Serves(Deki::MemoryRegion region) const override
     {
-        return region == Deki::Mem::Internal || region == Deki::Mem::External;
+        return region == Deki::Internal || region == Deki::External;
     }
 
     void* Allocate(Deki::MemoryRegion region, size_t bytes, bool needsDma) override
@@ -419,7 +419,7 @@ TEST(ParticlePool, ARequiredPoolThatFitsIsStillUsableAfterAnOptionalOneDoesNot)
 namespace
 {
 
-// Deki::Mem is where the engine puts its own, and a package is free to extend
+// Deki is where the engine puts its own, and a package is free to extend
 // it or to use its own namespace. The namespace is convention; the identity is
 // the hashed name.
 constexpr Deki::MemoryRegion kScratch = Deki::Region("particles.scratch");
@@ -433,7 +433,7 @@ public:
 
     bool Serves(Deki::MemoryRegion region) const override
     {
-        return region == Deki::Mem::Internal || region == kScratch;
+        return region == Deki::Internal || region == kScratch;
     }
 
     void* Allocate(Deki::MemoryRegion region, size_t bytes, bool) override
@@ -472,6 +472,6 @@ TEST(PackageDefinedRegion, ItIsAConstantExpressionSoItCostsNothing)
     // Usable in a static_assert and in a switch label, which is what lets a
     // provider dispatch on it without a runtime lookup or a registration call.
     static_assert(kScratch.id == Deki::HashName("particles.scratch"));
-    static_assert(kScratch != Deki::Mem::Internal);
+    static_assert(kScratch != Deki::Internal);
     EXPECT_STREQ(kScratch.name, "particles.scratch");
 }
