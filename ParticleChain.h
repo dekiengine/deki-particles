@@ -81,8 +81,7 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId,
         // whose state will not fit is refused rather than run uninitialised.
         e.state = ops->stateSize
                       ? Deki::Memory::AllocateArray<uint8_t>(ops->stateSize,
-                                                            Deki::MemoryUse::Internal,
-                                                            "ParticleChain::state")
+                                                            Deki::MemoryUse::Internal)
                       : nullptr;
         if (ops->stateSize && !e.state)
         {
