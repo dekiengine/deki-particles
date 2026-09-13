@@ -51,6 +51,15 @@ public:
     }
     void FreeInternal(void* ptr) override { free(ptr); }
 
+    // Draws on the same budget: this provider models a heap running out, and a
+    // DMA request comes from the same pool.
+    void* AllocateDMA(size_t size) override { return AllocateInternal(size); }
+
+    // Not modelled. The budget counts allocations rather than bytes, so there
+    // is no byte figure to report, and inventing one would put a fiction in
+    // the out-of-memory line these tests provoke.
+    size_t GetAvailableInternalRAM() const override { return 0; }
+
 private:
     int m_Allowed;
 };

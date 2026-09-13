@@ -44,12 +44,12 @@ public:
         // Time columns (age/lifetime) are seconds; spatial columns are meters.
         // Hot: every column is walked every frame. Memory zeroes what it hands
         // back, so the {} these replace is not lost.
-        posX.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::posX");
-        posY.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::posY");
-        velX.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::velX");
-        velY.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::velY");
-        age.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::age");
-        lifetime.Allocate(newCapacity, Deki::MemoryUse::Hot, "ParticlePool::lifetime");
+        posX.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::posX");
+        posY.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::posY");
+        velX.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::velX");
+        velY.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::velY");
+        age.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::age");
+        lifetime.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::lifetime");
 
         // All or nothing: a pool missing one column would still be indexed
         // by every update.
@@ -101,8 +101,8 @@ public:
     void EnsureRotation()
     {
         if (m_HasRotation || m_Capacity <= 0) return;
-        rotation.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::rotation");
-        rotationSpeed.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::rotationSpeed");
+        rotation.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::rotation");
+        rotationSpeed.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::rotationSpeed");
         if (!rotation || !rotationSpeed)
         {
             rotation.Reset();
@@ -114,7 +114,7 @@ public:
     void EnsureScale()
     {
         if (m_HasScale || m_Capacity <= 0) return;
-        scale.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::scale");
+        scale.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::scale");
         if (!scale) return;  // stays disabled; particles keep their size
         for (int i = 0; i < m_Capacity; ++i) scale[i] = 1.0f;
         m_HasScale = true;
@@ -122,10 +122,10 @@ public:
     void EnsureTint()
     {
         if (m_HasTint || m_Capacity <= 0) return;
-        tintR.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintR");
-        tintG.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintG");
-        tintB.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintB");
-        tintA.Allocate(m_Capacity, Deki::MemoryUse::Hot, "ParticlePool::tintA");
+        tintR.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::tintR");
+        tintG.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::tintG");
+        tintB.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::tintB");
+        tintA.Allocate(m_Capacity, Deki::MemoryUse::Internal, "ParticlePool::tintA");
         if (!tintR || !tintG || !tintB || !tintA)
         {
             tintR.Reset();
