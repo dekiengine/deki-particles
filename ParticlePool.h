@@ -42,8 +42,8 @@ public:
         if (newCapacity <= 0) return;
 
         // Time columns (age/lifetime) are seconds; spatial columns are meters.
-        // Hot: every column is walked every frame. Memory zeroes what it hands
-        // back, so the {} these replace is not lost.
+        // Internal because every column is walked every frame, and external
+        // RAM is reached over SPI. Memory zeroes what it hands back.
         posX.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::posX");
         posY.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::posY");
         velX.Allocate(newCapacity, Deki::MemoryUse::Internal, "ParticlePool::velX");
