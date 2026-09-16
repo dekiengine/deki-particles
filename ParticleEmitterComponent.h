@@ -55,24 +55,30 @@ class DEKI_PARTICLES_API ParticleEmitterComponent : public DekiRendering::Render
 public:
 
     DEKI_EXPORT
+    DEKI_TOOLTIP("Image drawn for each particle. A small, soft sprite hides the low particle counts a device can afford.")
     Deki::AssetRef<Deki2D::Sprite> sprite;
 
     // The effect recipe. Assign a ".asset" of type "ParticleGraph", authored
     // in the Node Graph window. No graph means no chain and no particles.
     DEKI_EXPORT
+    DEKI_TOOLTIP("The particle graph asset, which is where emission, velocity, size and colour over lifetime are authored.")
     Deki::AssetRef<ParticleGraph> graph;
 
     DEKI_EXPORT
+    DEKI_TOOLTIP("Ceiling on particles alive at once. The pool is allocated once at this size, so it is a memory decision as much as a visual one.")
     DEKI_RANGE(0, 4096)
     int32_t maxParticles = 64;
 
     DEKI_EXPORT
+    DEKI_TOOLTIP("Start emitting as soon as the object comes alive. Off, something has to start it.")
     bool playOnAwake = true;
 
     DEKI_EXPORT
+    DEKI_TOOLTIP("Restart the effect when it finishes instead of stopping. Off, it plays once and goes quiet.")
     bool looping = true;
 
     DEKI_EXPORT
+    DEKI_TOOLTIP("Leave particles where they were born when the emitter moves. Off, they travel with it, which suits a flame carried by a character and not smoke left behind one.")
     bool worldSpace = true;
 
     ParticleEmitterComponent();
