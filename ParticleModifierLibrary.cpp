@@ -23,6 +23,9 @@
 #include <cmath>
 #include <cstdint>
 
+namespace DekiParticles
+{
+
 namespace
 {
 
@@ -402,3 +405,5 @@ REGISTER_PARTICLE_MODIFIER(ParticleRotationOverLifetimeNode, ([] {
     ops.isEnabled  = &NodeEnabled<ParticleRotationOverLifetimeNode>;
     return ops;
 }()));
+
+}  // namespace DekiParticles

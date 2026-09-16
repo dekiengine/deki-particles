@@ -6,6 +6,9 @@
 #include <deki/providers/Memory.h>
 #include <vector>
 
+namespace DekiParticles
+{
+
 /**
  * @file ParticleChain.h
  * @brief Walking a particle graph into a flat list of modifier callbacks.
@@ -98,3 +101,5 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId,
     *outError = "graph chain is longer than the guard allows (wired in a cycle?)";
     return false;
 }
+
+}  // namespace DekiParticles

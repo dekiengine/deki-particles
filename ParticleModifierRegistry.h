@@ -7,6 +7,9 @@
 #include <cstdint>
 #include <unordered_map>
 
+namespace DekiParticles
+{
+
 class ParticleEmitterComponent;
 
 /**
@@ -51,7 +54,7 @@ struct ParticleModifierOps
 /**
  * @brief typeId (Deki::HashString of the node name) -> runtime ops.
  *
- * The data structs self-register into NodeFactory via their generated code;
+ * The data structs self-register into DekiNodeGraph::NodeFactory via their generated code;
  * this registry carries the behavior half. A node type in a "Particles/"
  * category with no entry here is a graph the emitter refuses to run, loudly:
  * silently skipping it would be a modifier that does nothing for no visible
@@ -85,3 +88,5 @@ private:
                 ::Deki::HashString(ClassName::StaticNodeName), Ops); \
         } \
     } s_##ClassName##_ParticleModifierRegistrar
+
+}  // namespace DekiParticles

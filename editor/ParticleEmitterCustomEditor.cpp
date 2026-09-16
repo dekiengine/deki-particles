@@ -1,6 +1,6 @@
 /**
  * @file ParticleEmitterCustomEditor.cpp
- * @brief Inspector override for ParticleEmitterComponent.
+ * @brief Inspector override for DekiParticles::ParticleEmitterComponent.
  *
  *  - Renders a preview transport (play / pause / step / restart) plus a speed
  *    slider that drives editor-mode simulation via OnEditorUpdate.
@@ -27,6 +27,9 @@
 #include <cstdio>
 #include <chrono>
 
+// Editor extensions live in DekiEditor; the package's own types are in DekiParticles.
+using namespace DekiParticles;
+
 // These were inlined Lucide codepoints (U+E12E/E13C/E148/E3EA), copied from an
 // editor-private IconsLucide.h. They never rendered: the editor merges only
 // tabler-icons.ttf, from ICON_MIN_TI (0xEA02) upward, so all four fell outside
@@ -41,11 +44,11 @@ namespace
     // The shape the gizmo draws lives in the graph's first Emission node.
     // Reading it here rather than caching keeps the gizmo honest while the
     // graph is being edited in the other window.
-    const ParticleEmissionNode* FindEmission(ParticleEmitterComponent* emitter)
+    const ParticleEmissionNode* FindEmission(DekiParticles::ParticleEmitterComponent* emitter)
     {
         ParticleGraph* g = emitter->graph.Get();
         if (!g || !g->data) return nullptr;
-        const NodeGraphData::NodeInstance* node = g->data->Root().FindFirstOfType(
+        const DekiNodeGraph::NodeGraphData::NodeInstance* node = g->data->Root().FindFirstOfType(
             Deki::HashString(ParticleEmissionNode::StaticNodeName));
         if (!node || !node->instance) return nullptr;
         return static_cast<const ParticleEmissionNode*>(node->instance);
@@ -55,13 +58,13 @@ namespace
 class ParticleEmitterCustomEditor : public CustomEditor
 {
 public:
-    const char* GetComponentName() const override { return "ParticleEmitterComponent"; }
+    const char* GetComponentName() const override { return "DekiParticles::ParticleEmitterComponent"; }
 
     bool WantsInspectorOverride(Deki::Component* /*comp*/) override { return true; }
 
     void OnEditorUpdate(Deki::Component* comp) override
     {
-        auto* emitter = static_cast<ParticleEmitterComponent*>(comp);
+        auto* emitter = static_cast<DekiParticles::ParticleEmitterComponent*>(comp);
         if (!emitter) return;
 
         // Measure the editor frame delta locally — Deki::Time::GetDeltaTimeF()
@@ -89,7 +92,7 @@ public:
 
     void OnInspectorGUI(Deki::Component* comp) override
     {
-        auto* emitter = static_cast<ParticleEmitterComponent*>(comp);
+        auto* emitter = static_cast<DekiParticles::ParticleEmitterComponent*>(comp);
         if (!emitter) return;
 
         EditorUI::Get().DrawDefaultInspector();
@@ -103,7 +106,7 @@ public:
     // -------------------------------------------------------------------
     void OnDrawGizmosSelected(Deki::Component* comp) override
     {
-        auto* emitter = static_cast<ParticleEmitterComponent*>(comp);
+        auto* emitter = static_cast<DekiParticles::ParticleEmitterComponent*>(comp);
         if (!emitter || !emitter->GetOwner()) return;
 
         const ParticleEmissionNode* em = FindEmission(emitter);
@@ -149,17 +152,17 @@ public:
 
 private:
     struct EditorState { float speed = 1.0f; };
-    std::unordered_map<ParticleEmitterComponent*, EditorState> m_State;
-    std::unordered_map<ParticleEmitterComponent*, bool>        m_StepRequested;
-    std::unordered_map<ParticleEmitterComponent*, std::chrono::steady_clock::time_point> m_LastTick;
+    std::unordered_map<DekiParticles::ParticleEmitterComponent*, EditorState> m_State;
+    std::unordered_map<DekiParticles::ParticleEmitterComponent*, bool>        m_StepRequested;
+    std::unordered_map<DekiParticles::ParticleEmitterComponent*, std::chrono::steady_clock::time_point> m_LastTick;
 
-    float GetSpeed(ParticleEmitterComponent* e)
+    float GetSpeed(DekiParticles::ParticleEmitterComponent* e)
     {
         auto it = m_State.find(e);
         return (it == m_State.end()) ? 1.0f : it->second.speed;
     }
 
-    void DrawPreviewSection(ParticleEmitterComponent* emitter)
+    void DrawPreviewSection(DekiParticles::ParticleEmitterComponent* emitter)
     {
         auto& ui = EditorUI::Get();
         ui.Space();

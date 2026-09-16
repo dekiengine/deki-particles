@@ -16,7 +16,10 @@
 #include <cstdint>
 #include <cstdlib>
 
-using deki_particles::ParticlePool;
+// The package's types moved into its namespace; tests name them unqualified.
+using namespace DekiParticles;
+
+using DekiParticles::ParticlePool;
 
 namespace
 {

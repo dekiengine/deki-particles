@@ -20,15 +20,24 @@
 #include "ParticleSystem.h"
 #include <deki/reflection/ComponentRegistry.h>
 #include <deki/reflection/ComponentFactory.h>
-#include "deki-nodegraph/DekiNode.h"   // NodeFactory + NodeTypeRegistry (editor)
-
-#ifdef DEKI_EDITOR
+#include "deki-nodegraph/DekiNode.h"   // DekiNodeGraph::NodeFactory + DekiNodeGraph::NodeTypeRegistry (editor)
 
 extern void DekiParticles_RegisterComponents();
 extern int  DekiParticles_GetAutoComponentCount();
 extern const Deki::ComponentMeta* DekiParticles_GetAutoComponentMeta(int index);
 
+namespace DekiParticles
+{
+
+#ifdef DEKI_EDITOR
+
+
 // Defined in editor/ParticleGraphEditor.cpp (re-registers the graph domain).
+
+// The exports below are C symbols at global scope; the package's own
+// registration helpers and statics live in its namespace.
+using namespace DekiParticles;
+
 extern "C" void DekiParticles_RegisterEditorGraphDomain(void);
 
 static bool s_ParticlesRegistered = false;
@@ -38,18 +47,18 @@ namespace
     // Re-runnable mirror of the generated REGISTER_RUNTIME_NODE/REGISTER_NODE
     // static registrars. Those run once at DLL load; the editor's plugin-only
     // hot reload wipes the shared node registries WITHOUT unloading this
-    // package, so registration must be repeatable on demand. NodeFactory
-    // overwrites by typeId and NodeTypeRegistry dedupes, so this is idempotent.
+    // package, so registration must be repeatable on demand. DekiNodeGraph::NodeFactory
+    // overwrites by typeId and DekiNodeGraph::NodeTypeRegistry dedupes, so this is idempotent.
     template<typename T>
     void RegisterParticleNodeType()
     {
-        SceneFormat::NodeFactory::Instance().Register(
+        DekiNodeGraph::SceneFormat::NodeFactory::Instance().Register(
             Deki::HashString(T::StaticNodeName),
             []() -> void* { return new T(); },
             [](void* p, Deki::SceneFormat::SceneMsgPackParser& parser, uint32_t mapSize) -> bool {
                 return DeserializeMsgPack(*static_cast<T*>(p), parser, mapSize); },
             [](void* p) { delete static_cast<T*>(p); });
-        NodeTypeRegistry::Instance().Register(&T::GetNodeMeta(), sizeof(DekiNodeMeta));
+        DekiNodeGraph::NodeTypeRegistry::Instance().Register(&T::GetNodeMeta(), sizeof(DekiNodeGraph::DekiNodeMeta));
     }
 }
 
@@ -58,7 +67,7 @@ extern "C" {
 /**
  * @brief (Re-)register this package's node graph types: modifier node
  * factories, editor metas, and the Particles graph domain. Called at package
- * load via DekiPlugin_RegisterComponents and again after any registry wipe
+ * load via ::DekiPlugin_RegisterComponents and again after any registry wipe
  * that keeps this DLL loaded (plugin-only hot reload).
  */
 DEKI_PARTICLES_API void DekiParticles_RegisterGraphTypes(void)
@@ -78,15 +87,15 @@ DEKI_PARTICLES_API void DekiParticles_RegisterGraphTypes(void)
 DEKI_PARTICLES_API int DekiParticles_EnsureRegistered(void)
 {
     if (s_ParticlesRegistered)
-        return DekiParticles_GetAutoComponentCount();
+        return ::DekiParticles_GetAutoComponentCount();
     s_ParticlesRegistered = true;
-    DekiParticles_RegisterComponents();
-    return DekiParticles_GetAutoComponentCount();
+    ::DekiParticles_RegisterComponents();
+    return ::DekiParticles_GetAutoComponentCount();
 }
 
 DEKI_PLUGIN_API const char* DekiPlugin_GetName(void)
 {
-    return "Deki Particles Package";
+    return "DekiRendering::Deki Particles Package";
 }
 
 DEKI_PLUGIN_API const char* DekiPlugin_GetVersion(void)
@@ -111,12 +120,12 @@ DEKI_PLUGIN_API void DekiPlugin_Shutdown(void)
 
 DEKI_PLUGIN_API int DekiPlugin_GetComponentCount(void)
 {
-    return DekiParticles_GetAutoComponentCount();
+    return ::DekiParticles_GetAutoComponentCount();
 }
 
 DEKI_PLUGIN_API const Deki::ComponentMeta* DekiPlugin_GetComponentMeta(int index)
 {
-    return DekiParticles_GetAutoComponentMeta(index);
+    return ::DekiParticles_GetAutoComponentMeta(index);
 }
 
 DEKI_PLUGIN_API void DekiPlugin_RegisterComponents(void)
@@ -138,3 +147,5 @@ DEKI_PARTICLES_API const char* DekiParticles_GetName(void)        { return "Part
 } // extern "C"
 
 #endif // DEKI_EDITOR
+}  // namespace DekiParticles
+

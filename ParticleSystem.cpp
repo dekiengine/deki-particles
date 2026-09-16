@@ -1,6 +1,9 @@
 #include "ParticleSystem.h"
 #include <algorithm>
 
+namespace DekiParticles
+{
+
 ParticleSystem& ParticleSystem::GetInstance()
 {
     static ParticleSystem s_instance;
@@ -26,3 +29,5 @@ void ParticleSystem::ClearAll()
 {
     m_Emitters.clear();
 }
+
+}  // namespace DekiParticles

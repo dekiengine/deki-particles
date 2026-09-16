@@ -35,6 +35,9 @@
 #include <cmath>
 #include <cstdint>
 
+// Editor extensions live in DekiEditor; the package's own types are in DekiParticles.
+using namespace DekiParticles;
+
 namespace
 {
 
@@ -47,9 +50,9 @@ constexpr float kTwoPi = Deki::Math::kTwoPi;
 // recessed band the window puts behind a gizmo.
 // ---------------------------------------------------------------------------
 
-inline uint32_t Ink(uint8_t a)      { return NodeGraphPreviewRgba(122, 190, 255, a); }  // the subject
-inline uint32_t Warm(uint8_t a)     { return NodeGraphPreviewRgba(255, 186, 110, a); }  // motion / vectors
-inline uint32_t Neutral(uint8_t a)  { return NodeGraphPreviewRgba(255, 255, 255, a); }  // axes, particles
+inline uint32_t Ink(uint8_t a)      { return DekiNodeGraph::NodeGraphPreviewRgba(122, 190, 255, a); }  // the subject
+inline uint32_t Warm(uint8_t a)     { return DekiNodeGraph::NodeGraphPreviewRgba(255, 186, 110, a); }  // motion / vectors
+inline uint32_t Neutral(uint8_t a)  { return DekiNodeGraph::NodeGraphPreviewRgba(255, 255, 255, a); }  // axes, particles
 
 // ---------------------------------------------------------------------------
 // Drawing helpers over the three primitives.
@@ -59,7 +62,7 @@ inline uint32_t Neutral(uint8_t a)  { return NodeGraphPreviewRgba(255, 255, 255,
 // every conversion to screen flips Y in one place: here.
 struct Painter
 {
-    const NodeGraphPreviewCanvas& c;
+    const DekiNodeGraph::NodeGraphPreviewCanvas& c;
     float dpi = 1.0f;
 
     void Line(float x0, float y0, float x1, float y1, uint32_t col, float th = 1.0f) const
@@ -574,8 +577,8 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
             const float ex = (cx + sq < x1) ? cx + sq : x1;
             const float ey = (cy + sq < y1) ? cy + sq : y1;
             p.FillRect(cx, cy, ex, ey,
-                       (col & 1) ? NodeGraphPreviewRgba(58, 58, 62, 255)
-                                 : NodeGraphPreviewRgba(42, 42, 46, 255));
+                       (col & 1) ? DekiNodeGraph::NodeGraphPreviewRgba(58, 58, 62, 255)
+                                 : DekiNodeGraph::NodeGraphPreviewRgba(42, 42, 46, 255));
         }
     }
 
@@ -593,7 +596,7 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
     {
         const float f = (static_cast<float>(i) + 0.5f) / static_cast<float>(steps);
         p.FillRect(x0 + sw * i, y0, x0 + sw * (i + 1) + 1.0f, y1,
-                   NodeGraphPreviewRgba(static_cast<uint8_t>(r0 + dr * f),
+                   DekiNodeGraph::NodeGraphPreviewRgba(static_cast<uint8_t>(r0 + dr * f),
                                         static_cast<uint8_t>(g0 + dg * f),
                                         static_cast<uint8_t>(b0 + db * f),
                                         static_cast<uint8_t>(a0 + da * f)));
@@ -684,7 +687,7 @@ float GizmoHeight(uint32_t typeId, const void* instance)
 
 void GizmoDraw(uint32_t typeId, const void* instance,
                float x, float y, float w, float h, float dpi,
-               const NodeGraphPreviewCanvas& canvas)
+               const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
 {
     if (!instance || !canvas.line || !canvas.circleFilled || !canvas.rectFilled)
         return;
@@ -711,9 +714,9 @@ void GizmoDraw(uint32_t typeId, const void* instance,
 
 } // namespace
 
-NodeGraphNodeGizmoOps DekiParticles_GizmoOps()
+DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticles_GizmoOps()
 {
-    NodeGraphNodeGizmoOps ops;
+    DekiNodeGraph::NodeGraphNodeGizmoOps ops;
     ops.height = &GizmoHeight;
     ops.draw   = &GizmoDraw;
     return ops;

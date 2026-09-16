@@ -15,6 +15,9 @@
 #include <cstring>
 #include <cstdint>
 
+namespace DekiParticles
+{
+
 ParticleEmitterComponent::ParticleEmitterComponent()
 {
     rng.Seed((uint32_t)(uintptr_t)this);
@@ -236,7 +239,7 @@ namespace
 {
 // Composite pixels per world metre: the sprite's own scale, so the emitter's
 // output is 1:1 with the art whenever the camera runs at the sprite's ppm.
-inline float SpritePpm(const Sprite* spr)
+inline float SpritePpm(const Deki2D::Sprite* spr)
 {
     return (spr && spr->pixelsPerMeter > 0.0f) ? spr->pixelsPerMeter : 1.0f;
 }
@@ -256,7 +259,7 @@ void ParticleEmitterComponent::AnchorFor(const Deki::Object* owner, float& ancho
     }
 }
 
-bool ParticleEmitterComponent::ComputeBounds(const Sprite* spr, float anchorX, float anchorY, Bounds& out) const
+bool ParticleEmitterComponent::ComputeBounds(const Deki2D::Sprite* spr, float anchorX, float anchorY, Bounds& out) const
 {
     const int n = pool.AliveCount();
     if (n <= 0 || !spr)
@@ -297,7 +300,7 @@ bool ParticleEmitterComponent::ComputeBounds(const Sprite* spr, float anchorX, f
 
 bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeight) const
 {
-    const Sprite* spr = sprite.Get();
+    const Deki2D::Sprite* spr = sprite.Get();
     if (!spr || !spr->data)
         return false;  // RenderContent logs the missing sprite; let it run
 
@@ -336,7 +339,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
 {
     outTintR = outTintG = outTintB = outTintA = 255;
 
-    Sprite* spr = sprite.Get();
+    Deki2D::Sprite* spr = sprite.Get();
     if (!spr || !spr->data)
     {
         if (!m_LoggedMissingSprite)
@@ -460,3 +463,5 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner,
     outPivotY = -static_cast<float>(b.minY) / static_cast<float>(bboxH);
     return true;
 }
+
+}  // namespace DekiParticles

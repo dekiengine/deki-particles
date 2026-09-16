@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace deki_particles {
+namespace DekiParticles {
 
 // xorshift32 PRNG. One state per emitter; cheap and good enough for visuals.
 struct Xorshift32
@@ -32,4 +32,4 @@ struct Xorshift32
     }
 };
 
-} // namespace deki_particles
+} // namespace DekiParticles

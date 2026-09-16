@@ -17,6 +17,9 @@
 
 #include "deki-nodegraph/DekiNode.h"
 
+// Editor extensions live in DekiEditor; the package's own types are in DekiParticles.
+using namespace DekiParticles;
+
 namespace DekiEditor
 {
 
@@ -54,11 +57,11 @@ REGISTER_EDITOR(ParticleGraphAssetEditor)
 
 // Implemented in ParticlePreview.cpp: runs the graph being edited and draws
 // its particles, so the Node Graph window can offer a Preview panel.
-NodeGraphPreviewOps DekiParticles_PreviewOps();
+DekiNodeGraph::NodeGraphPreviewOps DekiParticles_PreviewOps();
 
 // Implemented in ParticleNodeGizmos.cpp: draws the selected node's shape, arc
 // or ramp in the properties panel, under its title.
-NodeGraphNodeGizmoOps DekiParticles_GizmoOps();
+DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticles_GizmoOps();
 
 REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(g_ParticleDomain,
                                           "ParticleGraph", "Particle Effect",
@@ -70,9 +73,13 @@ REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(g_ParticleDomain,
 // registry while this DLL stays loaded, so the static registrar above never
 // reruns. Registry Register() dedupes, so calling this repeatedly is safe.
 // Invoked from DekiParticles_RegisterGraphTypes (DekiParticlesPackage.cpp).
+// The exports below are C symbols at global scope; the package's own
+// registration helpers and statics live in its namespace.
+using namespace DekiEditor;
+
 extern "C" void DekiParticles_RegisterEditorGraphDomain(void)
 {
-    NodeGraphDomainRegistry::Instance().Register(&g_ParticleDomain);
+    DekiNodeGraph::NodeGraphDomainRegistry::Instance().Register(&g_ParticleDomain);
 }
 
 #endif // DEKI_EDITOR

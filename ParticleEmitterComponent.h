@@ -11,6 +11,9 @@
 #include "ParticleChain.h"
 #include <vector>
 
+namespace DekiParticles
+{
+
 /**
  * @brief Renderable particle emitter.
  *
@@ -46,12 +49,13 @@
  */
 DEKI_CATEGORY("Particles")
 DEKI_DESCRIPTION("Spawns and draws particles, following a particle graph asset.")
-class DEKI_PARTICLES_API ParticleEmitterComponent : public RendererComponent
+DEKI_FORMER_NAME("ParticleEmitterComponent")
+class DEKI_PARTICLES_API ParticleEmitterComponent : public DekiRendering::RendererComponent
 {
 public:
 
     DEKI_EXPORT
-    Deki::AssetRef<Sprite> sprite;
+    Deki::AssetRef<Deki2D::Sprite> sprite;
 
     // The effect recipe. Assign a ".asset" of type "ParticleGraph", authored
     // in the Node Graph window. No graph means no chain and no particles.
@@ -92,8 +96,8 @@ public:
 
     // Public so modifiers can read/write directly. Hot-path inner loops touch
     // these without going through accessors.
-    deki_particles::ParticlePool pool;
-    deki_particles::Xorshift32   rng;
+    DekiParticles::ParticlePool pool;
+    DekiParticles::Xorshift32   rng;
 
     // Walk the graph asset into m_Chain (see ParticleChain.h). Called by
     // EnsureReady; call it directly after assigning a different graph asset.
@@ -163,8 +167,10 @@ private:
         int32_t minX, minY, maxX, maxY;
         float ppm;  // composite pixels per world metre (the sprite's)
     };
-    bool ComputeBounds(const Sprite* spr, float anchorX, float anchorY, Bounds& out) const;
+    bool ComputeBounds(const Deki2D::Sprite* spr, float anchorX, float anchorY, Bounds& out) const;
     void AnchorFor(const Deki::Object* owner, float& anchorX, float& anchorY) const;
 };
 
 // Generated property metadata
+
+}  // namespace DekiParticles

@@ -2,6 +2,9 @@
 
 #include "deki-nodegraph/NodeGraphData.h"
 
+namespace DekiParticles
+{
+
 // A particle effect as a loadable asset. The ".asset" (JSON,
 // "type":"ParticleGraph") is authored in the editor's Node Graph window and
 // compiled to MessagePack by the generic data-asset path; at runtime the
@@ -18,7 +21,9 @@ struct ParticleGraph
     // registration, and the editor's node-graph domain registration.
     static constexpr const char* AssetTypeName = "ParticleGraph";
 
-    NodeGraphData* data = nullptr;
+    DekiNodeGraph::NodeGraphData* data = nullptr;
 
     ~ParticleGraph() { delete data; }
 };
+
+}  // namespace DekiParticles

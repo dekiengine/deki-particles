@@ -1,5 +1,5 @@
 #include "ParticleGraph.h"
-#include "ParticleNodes.h"   // pulls in the node registrations (NodeFactory)
+#include "ParticleNodes.h"   // pulls in the node registrations (DekiNodeGraph::NodeFactory)
 
 #include <deki/assets/AssetManager.h>
 #include <deki/LogSystem.h>
@@ -9,17 +9,20 @@
 #include <fstream>
 #include <vector>
 
+namespace DekiParticles
+{
+
 // Runtime loader for the ParticleGraph effect asset. Mirrors the plain
 // data-asset loaders: the editor compiles the ".asset" JSON to a MessagePack
 // cache via the generic path, and here we parse that cache with the generic
-// NodeGraphData loader (which creates the node instances via NodeFactory).
+// DekiNodeGraph::NodeGraphData loader (which creates the node instances via DekiNodeGraph::NodeFactory).
 // Same path on desktop and device. A malformed graph loads as nullptr, loudly.
 
 namespace
 {
     ParticleGraph* LoadGraphFromMemory(const uint8_t* data, size_t size)
     {
-        NodeGraphData* graphData = NodeGraphData::LoadFromMemory(data, size);
+        DekiNodeGraph::NodeGraphData* graphData = DekiNodeGraph::NodeGraphData::LoadFromMemory(data, size);
         if (!graphData)
         {
             DEKI_LOG_ERROR("ParticleGraph: failed to load particle effect asset");
@@ -55,3 +58,5 @@ namespace
     };
     static _ParticleGraphLoaderReg s_particleGraphLoaderReg;
 }
+
+}  // namespace DekiParticles

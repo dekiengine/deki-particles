@@ -3,6 +3,9 @@
 #include <vector>
 #include "DekiParticlesAPI.h"
 
+namespace DekiParticles
+{
+
 class ParticleEmitterComponent;
 
 /**
@@ -30,3 +33,5 @@ private:
     ParticleSystem() = default;
     std::vector<ParticleEmitterComponent*> m_Emitters;
 };
+
+}  // namespace DekiParticles

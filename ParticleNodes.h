@@ -6,6 +6,9 @@
 #include <deki/Color.h>
 #include "deki-nodegraph/DekiNode.h"
 
+namespace DekiParticles
+{
+
 // Node vocabulary for the particle graph ("Particles" domain).
 //
 // A particle graph is the RECIPE for an effect: the Emitter node, then a chain
@@ -305,3 +308,5 @@ public:
 #include "generated/ParticleSizeOverLifetimeNode.gen.h"
 #include "generated/ParticleColorOverLifetimeNode.gen.h"
 #include "generated/ParticleRotationOverLifetimeNode.gen.h"
+
+}  // namespace DekiParticles

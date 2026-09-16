@@ -6,7 +6,7 @@
 #include <deki/LogSystem.h>
 #include <deki/providers/Buffer.h>
 
-namespace deki_particles {
+namespace DekiParticles {
 
 /**
  * @brief Struct-of-arrays particle storage with lazy optional columns.
@@ -191,4 +191,4 @@ private:
     }
 };
 
-} // namespace deki_particles
+} // namespace DekiParticles
