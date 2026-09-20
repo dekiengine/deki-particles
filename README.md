@@ -1,44 +1,42 @@
 # Deki Particles
 
-Documentation: https://dekiengine.github.io/deki-particles/ (components and properties, generated from the code)
+Docs: https://dekiengine.github.io/deki-particles/ (components and properties, generated from the code)
 
 Particle system for the Deki Engine: emission shapes (point/circle/rect), gravity, drag, initial velocity, and lifetime/size/color/rotation modifiers.
 
-An effect is a **Particle Effect** asset, authored in the editor's Node Graph window: an Emitter node followed by a chain of modifier nodes, wired in the order they run. `ParticleEmitterComponent` references that asset and walks it once when it starts, so the per-frame cost is exactly the modifiers you wired, with no graph interpretation in the loop. One graph drives any number of emitters.
+An effect is a **Particle Effect** asset, authored in the editor's Node Graph
+window: an Emitter node, then modifier nodes wired in the order they run.
+`ParticleEmitterComponent` points at the asset and walks it once on start, so
+the per-frame cost is just the modifiers you wired. One graph can drive any
+number of emitters.
 
-Part of the [Deki Engine](https://github.com/dekiengine/deki-engine) package ecosystem.
+Part of [Deki Engine](https://github.com/dekiengine/deki-engine).
 
 ## Namespace
 
-This package's types live in `DekiParticles`. Scene files store the qualified
-name, so a component is `DekiParticles::SomeComponent` there, and code naming one
-needs the namespace:
+Types live in `DekiParticles`. Scene files store the qualified name, and so does code:
 
 ```cpp
 using namespace DekiParticles;
 obj->AddComponent<SomeComponent>();
 ```
 
-Scenes saved before 0.16.0 used bare names and still load: every component
-records what it used to be called, and a save writes the current name.
+Scenes saved before 0.16.0 used bare names and still load; saving writes the current one.
 
-## Installation
+## Install
 
-Install via the Package Manager inside the Deki Editor.
+Package Manager in the Deki Editor, or `DekiEditor --packages-add deki-particles <project>`.
 
 ## Units
 
-Particle positions and velocities are world metres, like every other
-component; the graph nodes' speeds are m/s and radii are metres. The sprite
-is drawn at its own `pixelsPerMeter`, so a particle sprite has the size its
-art was authored at when the camera runs at the sprite's ppm, and a scale
-of 1 means "as authored".
+Positions and velocities are world metres, like everywhere else. Node speeds
+are m/s, radii are metres. The sprite draws at its own `pixelsPerMeter`, so
+scale 1 means "the size the art was authored at".
 
-Before September 2026 the emitter composited the sprite at one composite
-pixel per metre, so a 16 px sprite covered 16 m on screen (16x its authored
-size at 16 ppm) while positions were already metres. Scenes authored against
-that behaviour will show their particle sprites at the authored size now;
-scale them up in the graph's size node if the old look was intended.
+Before September 2026 the emitter composited at one pixel per metre, so a
+16 px sprite covered 16 m on screen. Old scenes now show their particles at
+the authored size instead. If you wanted the old look, scale them up in the
+graph's size node.
 
 ## Adding your own modifier
 
@@ -58,4 +56,4 @@ From any package or the project DLL, with no change to deki-particles:
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+Apache 2.0. See [LICENSE](LICENSE).
