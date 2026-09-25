@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
 #include <vector>
 
 namespace DekiParticles
@@ -38,17 +37,14 @@ namespace
     {
         _ParticleGraphLoaderReg()
         {
+            // Through the engine's filesystem: the path is a virtual one on a
+            // device (F:/assets/..., S:/...), which a std::ifstream cannot open.
             auto pathLoader = [](const char* p) -> void*
             {
-                std::ifstream f(p, std::ios::binary | std::ios::ate);
-                if (!f.is_open())
+                std::vector<uint8_t> buf;
+                if (!Deki::AssetManager::ReadWholeFile(p, buf))
                     return nullptr;
-                std::streamsize n = f.tellg();
-                f.seekg(0, std::ios::beg);
-                std::vector<uint8_t> buf(static_cast<size_t>(n));
-                if (!f.read(reinterpret_cast<char*>(buf.data()), n))
-                    return nullptr;
-                return LoadGraphFromMemory(buf.data(), static_cast<size_t>(n));
+                return LoadGraphFromMemory(buf.data(), buf.size());
             };
             auto unloader  = [](void* a) { delete static_cast<ParticleGraph*>(a); };
             auto memLoader = [](const uint8_t* d, size_t n) -> void* { return LoadGraphFromMemory(d, n); };

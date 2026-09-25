@@ -8,6 +8,12 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
+## Unreleased
+
+### Fixed
+- A particle graph asset loads on a device: its loader opened the path with
+  `std::ifstream`, which cannot open `F:/` or `S:/`.
+
 ## 0.16.0
 
 ### Changed
