@@ -34,7 +34,7 @@ namespace DekiParticles
 //
 // A new modifier type is a struct here (plus its generated include at the
 // bottom), an ops registration in ParticleModifierLibrary.cpp, and a line in
-// DekiParticles_RegisterGraphTypes. Another package can add one the same way
+// DekiParticlesRegisterGraphTypes. Another package can add one the same way
 // with no change to deki-particles: its category just has to start "Particles/".
 
 // ---------------------------------------------------------------------------
@@ -46,8 +46,8 @@ namespace DekiParticles
 struct ParticleEmitNode
 {
     DEKI_NODE(ParticleEmitNode, "ParticleEmit", "Particles/Flow")
-    static constexpr const char* StaticNodeDisplayName = "Emitter";
-    static constexpr const char* StaticNodeDescription = "Where the chain starts. Wire it to the first modifier.";
+    static constexpr const char* kStaticNodeDisplayName = "Emitter";
+    static constexpr const char* kStaticNodeDescription = "Where the chain starts. Wire it to the first modifier.";
     DEKI_NODE_OUTPUTS("chain")
     DEKI_NODE_PERMANENT()
 };
@@ -69,8 +69,8 @@ enum class EmitterShapeKind : uint8_t
 struct ParticleEmissionNode
 {
     DEKI_NODE(ParticleEmissionNode, "ParticleEmission", "Particles/Emission")
-    static constexpr const char* StaticNodeDisplayName = "Emission";
-    static constexpr const char* StaticNodeDescription = "How often particles spawn, where, and how long they live.";
+    static constexpr const char* kStaticNodeDisplayName = "Emission";
+    static constexpr const char* kStaticNodeDescription = "How often particles spawn, where, and how long they live.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -135,8 +135,8 @@ public:
 struct ParticleInitialVelocityNode
 {
     DEKI_NODE(ParticleInitialVelocityNode, "ParticleInitialVelocity", "Particles/Initial")
-    static constexpr const char* StaticNodeDisplayName = "Initial Velocity";
-    static constexpr const char* StaticNodeDescription = "Gives each new particle a starting speed and direction.";
+    static constexpr const char* kStaticNodeDisplayName = "Initial Velocity";
+    static constexpr const char* kStaticNodeDescription = "Gives each new particle a starting speed and direction.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -168,8 +168,8 @@ public:
 struct ParticleInitialRotationNode
 {
     DEKI_NODE(ParticleInitialRotationNode, "ParticleInitialRotation", "Particles/Initial")
-    static constexpr const char* StaticNodeDisplayName = "Initial Rotation";
-    static constexpr const char* StaticNodeDescription = "Gives each new particle a starting angle and spin rate.";
+    static constexpr const char* kStaticNodeDisplayName = "Initial Rotation";
+    static constexpr const char* kStaticNodeDescription = "Gives each new particle a starting angle and spin rate.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -204,8 +204,8 @@ public:
 struct ParticleGravityNode
 {
     DEKI_NODE(ParticleGravityNode, "ParticleGravity", "Particles/Forces")
-    static constexpr const char* StaticNodeDisplayName = "Gravity";
-    static constexpr const char* StaticNodeDescription = "Pulls particles with a constant acceleration.";
+    static constexpr const char* kStaticNodeDisplayName = "Gravity";
+    static constexpr const char* kStaticNodeDescription = "Pulls particles with a constant acceleration.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -226,8 +226,8 @@ public:
 struct ParticleDragNode
 {
     DEKI_NODE(ParticleDragNode, "ParticleDrag", "Particles/Forces")
-    static constexpr const char* StaticNodeDisplayName = "Drag";
-    static constexpr const char* StaticNodeDescription = "Slows particles down over time.";
+    static constexpr const char* kStaticNodeDisplayName = "Drag";
+    static constexpr const char* kStaticNodeDescription = "Slows particles down over time.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -245,8 +245,8 @@ public:
 struct ParticleSizeOverLifetimeNode
 {
     DEKI_NODE(ParticleSizeOverLifetimeNode, "ParticleSizeOverLifetime", "Particles/Over Lifetime")
-    static constexpr const char* StaticNodeDisplayName = "Size over Lifetime";
-    static constexpr const char* StaticNodeDescription = "Grows or shrinks a particle as it ages.";
+    static constexpr const char* kStaticNodeDisplayName = "Size over Lifetime";
+    static constexpr const char* kStaticNodeDescription = "Grows or shrinks a particle as it ages.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -264,8 +264,8 @@ public:
 struct ParticleColorOverLifetimeNode
 {
     DEKI_NODE(ParticleColorOverLifetimeNode, "ParticleColorOverLifetime", "Particles/Over Lifetime")
-    static constexpr const char* StaticNodeDisplayName = "Color over Lifetime";
-    static constexpr const char* StaticNodeDescription = "Fades a particle's color and alpha as it ages.";
+    static constexpr const char* kStaticNodeDisplayName = "Color over Lifetime";
+    static constexpr const char* kStaticNodeDescription = "Fades a particle's color and alpha as it ages.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:
@@ -281,8 +281,8 @@ public:
 struct ParticleRotationOverLifetimeNode
 {
     DEKI_NODE(ParticleRotationOverLifetimeNode, "ParticleRotationOverLifetime", "Particles/Over Lifetime")
-    static constexpr const char* StaticNodeDisplayName = "Rotation over Lifetime";
-    static constexpr const char* StaticNodeDescription = "Ramps a particle's spin rate as it ages.";
+    static constexpr const char* kStaticNodeDisplayName = "Rotation over Lifetime";
+    static constexpr const char* kStaticNodeDescription = "Ramps a particle's spin rate as it ages.";
     DEKI_NODE_INPUTS("in")
     DEKI_NODE_OUTPUTS("next")
 public:

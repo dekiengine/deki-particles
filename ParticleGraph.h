@@ -19,7 +19,7 @@ struct ParticleGraph
     // Asset type name for AssetRef<ParticleGraph> / AssetManager lookup.
     // Matches the ".asset" file's "type" field, the runtime loader
     // registration, and the editor's node-graph domain registration.
-    static constexpr const char* AssetTypeName = "ParticleGraph";
+    static constexpr const char* kAssetTypeName = "ParticleGraph";
 
     DekiNodeGraph::NodeGraphData* data = nullptr;
 

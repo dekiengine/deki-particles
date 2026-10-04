@@ -33,9 +33,9 @@ ParticleGraph* LoadGraphFromMemory(const uint8_t* data, size_t size)
     return graph;
 }
 
-struct _ParticleGraphLoaderReg
+struct ParticleGraphLoaderReg
 {
-    _ParticleGraphLoaderReg()
+    ParticleGraphLoaderReg()
     {
         // Through the engine's filesystem: the path is a virtual one on a
         // device (F:/assets/..., S:/...), which a std::ifstream cannot open.
@@ -56,7 +56,7 @@ struct _ParticleGraphLoaderReg
         Deki::AssetManager::RegisterLoader("ParticleGraph", pathLoader, unloader, memLoader);
     }
 };
-static _ParticleGraphLoaderReg s_particleGraphLoaderReg;
+static ParticleGraphLoaderReg s_ParticleGraphLoaderReg;
 }  // namespace
 
 }  // namespace DekiParticles

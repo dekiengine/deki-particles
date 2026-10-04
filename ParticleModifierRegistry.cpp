@@ -5,8 +5,8 @@ namespace DekiParticles
 
 ParticleModifierRegistry& ParticleModifierRegistry::Instance()
 {
-    static ParticleModifierRegistry instance;
-    return instance;
+    static ParticleModifierRegistry s_Instance;
+    return s_Instance;
 }
 
 }  // namespace DekiParticles

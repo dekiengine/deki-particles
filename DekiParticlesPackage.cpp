@@ -22,9 +22,9 @@
 #include <deki/reflection/ComponentFactory.h>
 #include "deki-nodegraph/DekiNode.h"  // DekiNodeGraph::NodeFactory + DekiNodeGraph::NodeTypeRegistry (editor)
 
-extern void DekiParticles_RegisterComponents();
-extern int DekiParticles_GetAutoComponentCount();
-extern const Deki::ComponentMeta* DekiParticles_GetAutoComponentMeta(int index);
+extern void DekiParticlesRegisterComponents();
+extern int DekiParticlesGetAutoComponentCount();
+extern const Deki::ComponentMeta* DekiParticlesGetAutoComponentMeta(int index);
 
 namespace DekiParticles
 {
@@ -37,7 +37,7 @@ namespace DekiParticles
 // registration helpers and statics live in its namespace.
 using namespace DekiParticles;
 
-extern "C" void DekiParticles_RegisterEditorGraphDomain(void);
+extern "C" void DekiParticlesRegisterEditorGraphDomain(void);
 
 static bool s_ParticlesRegistered = false;
 
@@ -65,10 +65,10 @@ extern "C"
     /**
      * @brief (Re-)register this package's node graph types: modifier node
      * factories, editor metas, and the Particles graph domain. Called at package
-     * load via ::DekiPlugin_RegisterComponents and again after any registry wipe
+     * load via ::DekiPluginRegisterComponents and again after any registry wipe
      * that keeps this DLL loaded (plugin-only hot reload).
      */
-    DEKI_PARTICLES_API void DekiParticles_RegisterGraphTypes(void)
+    DEKI_PARTICLES_API void DekiParticlesRegisterGraphTypes(void)
     {
         RegisterParticleNodeType<ParticleEmitNode>();
         RegisterParticleNodeType<ParticleEmissionNode>();
@@ -79,26 +79,26 @@ extern "C"
         RegisterParticleNodeType<ParticleSizeOverLifetimeNode>();
         RegisterParticleNodeType<ParticleColorOverLifetimeNode>();
         RegisterParticleNodeType<ParticleRotationOverLifetimeNode>();
-        DekiParticles_RegisterEditorGraphDomain();
+        DekiParticlesRegisterEditorGraphDomain();
     }
 
-    DEKI_PARTICLES_API int DekiParticles_EnsureRegistered(void)
+    DEKI_PARTICLES_API int DekiParticlesEnsureRegistered(void)
     {
         if (s_ParticlesRegistered)
         {
-            return ::DekiParticles_GetAutoComponentCount();
+            return ::DekiParticlesGetAutoComponentCount();
         }
         s_ParticlesRegistered = true;
-        ::DekiParticles_RegisterComponents();
-        return ::DekiParticles_GetAutoComponentCount();
+        ::DekiParticlesRegisterComponents();
+        return ::DekiParticlesGetAutoComponentCount();
     }
 
-    DEKI_PLUGIN_API const char* DekiPlugin_GetName(void)
+    DEKI_PLUGIN_API const char* DekiPluginGetName(void)
     {
         return "Deki Particles Package";
     }
 
-    DEKI_PLUGIN_API const char* DekiPlugin_GetVersion(void)
+    DEKI_PLUGIN_API const char* DekiPluginGetVersion(void)
     {
 #ifdef DEKI_PACKAGE_VERSION
         return DEKI_PACKAGE_VERSION;
@@ -107,43 +107,43 @@ extern "C"
 #endif
     }
 
-    DEKI_PLUGIN_API int DekiPlugin_Init(void)
+    DEKI_PLUGIN_API int DekiPluginInit(void)
     {
         return 0;
     }
 
-    DEKI_PLUGIN_API void DekiPlugin_Shutdown(void)
+    DEKI_PLUGIN_API void DekiPluginShutdown(void)
     {
         s_ParticlesRegistered = false;
         ParticleSystem::GetInstance().ClearAll();
     }
 
-    DEKI_PLUGIN_API int DekiPlugin_GetComponentCount(void)
+    DEKI_PLUGIN_API int DekiPluginGetComponentCount(void)
     {
-        return ::DekiParticles_GetAutoComponentCount();
+        return ::DekiParticlesGetAutoComponentCount();
     }
 
-    DEKI_PLUGIN_API const Deki::ComponentMeta* DekiPlugin_GetComponentMeta(int index)
+    DEKI_PLUGIN_API const Deki::ComponentMeta* DekiPluginGetComponentMeta(int index)
     {
-        return ::DekiParticles_GetAutoComponentMeta(index);
+        return ::DekiParticlesGetAutoComponentMeta(index);
     }
 
-    DEKI_PLUGIN_API void DekiPlugin_RegisterComponents(void)
+    DEKI_PLUGIN_API void DekiPluginRegisterComponents(void)
     {
-        DekiParticles_EnsureRegistered();
+        DekiParticlesEnsureRegistered();
         // Deliberately OUTSIDE the s_ParticlesRegistered latch: node registries
         // are wiped on every hot reload (full or plugin-only) and this export is
         // the re-registration path for the plugin-only case.
-        DekiParticles_RegisterGraphTypes();
+        DekiParticlesRegisterGraphTypes();
     }
 
-    DEKI_PLUGIN_API void DekiPlugin_OnPlayModeStop(void)
+    DEKI_PLUGIN_API void DekiPluginOnPlayModeStop(void)
     {
         ParticleSystem::GetInstance().ClearAll();
     }
 
     // Package-specific feature API (for linked-DLL access without name conflicts)
-    DEKI_PARTICLES_API const char* DekiParticles_GetName(void)
+    DEKI_PARTICLES_API const char* DekiParticlesGetName(void)
     {
         return "Particles";
     }

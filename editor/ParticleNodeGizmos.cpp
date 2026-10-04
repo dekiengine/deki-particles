@@ -203,9 +203,9 @@ struct Sample
 
 const Sample* UnitSamples(int& count)
 {
-    static Sample s[28];
-    static bool built = false;
-    if (!built)
+    static Sample s_S[28];
+    static bool s_Built = false;
+    if (!s_Built)
     {
         uint32_t seed = 0x9E3779B9u;
         auto next = [&seed]()
@@ -213,15 +213,15 @@ const Sample* UnitSamples(int& count)
             seed = seed * 1664525u + 1013904223u;
             return static_cast<float>((seed >> 8) & 0xFFFFFFu) * (1.0f / 16777216.0f);
         };
-        for (Sample& p : s)
+        for (Sample& p : s_S)
         {
             p.x = next() * 2.0f - 1.0f;
             p.y = next() * 2.0f - 1.0f;
         }
-        built = true;
+        s_Built = true;
     }
-    count = static_cast<int>(sizeof(s) / sizeof(s[0]));
-    return s;
+    count = static_cast<int>(sizeof(s_S) / sizeof(s_S[0]));
+    return s_S;
 }
 
 // ---------------------------------------------------------------------------
@@ -321,8 +321,8 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
     const float pad = 14.0f * p.dpi;
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
-    float R = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
-    if (R < 4.0f)
+    float r = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
+    if (r < 4.0f)
     {
         return;
     }
@@ -350,14 +350,14 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
     if (mMax <= 0.0001f)
     {
         // No speed: particles stay where they are born. Say that plainly.
-        p.Ring(cx, cy, R * 0.25f, Ink(50), 1.0f);
+        p.Ring(cx, cy, r * 0.25f, Ink(50), 1.0f);
         p.Dot(cx, cy, 3.5f * p.dpi, Ink(200));
         p.Origin(cx, cy);
         return;
     }
 
-    float rIn = R * ((m0 < m1 ? m0 : m1) / mMax);
-    float rOut = R;
+    float rIn = r * ((m0 < m1 ? m0 : m1) / mMax);
+    float rOut = r;
     if (rIn > rOut)
     {
         rIn = rOut;
@@ -408,12 +408,12 @@ void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
     const float pad = 14.0f * p.dpi;
-    float R = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
-    if (R < 6.0f)
+    float r = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
+    if (r < 6.0f)
     {
         return;
     }
-    const float half = R * 0.52f;
+    const float half = r * 0.52f;
 
     // The two ends of the birth-angle range. Identical values draw one square
     // over the other, which is the honest picture of "every particle the same".
@@ -424,7 +424,7 @@ void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
     const float spin = (n.spinSpeedMin + n.spinSpeedMax) * 0.5f;
     if (std::fabs(spin) > 0.0001f)
     {
-        const float rr = R * 0.94f;
+        const float rr = r * 0.94f;
         float sweep = spin / (2.0f * kTwoPi);  // full range = a full turn
         if (sweep > 1.0f)
         {
@@ -455,15 +455,15 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p, float x, float 
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
     const float pad = 14.0f * p.dpi;
-    float R = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
-    if (R < 6.0f)
+    float r = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
+    if (r < 6.0f)
     {
         return;
     }
 
     // Faint axes, so a sideways pull is visibly sideways.
-    p.Line(cx - R, cy, cx + R, cy, Neutral(24), 1.0f);
-    p.Line(cx, cy - R, cx, cy + R, Neutral(24), 1.0f);
+    p.Line(cx - r, cy, cx + r, cy, Neutral(24), 1.0f);
+    p.Line(cx, cy - r, cx, cy + r, Neutral(24), 1.0f);
 
     const float mag = std::sqrt(n.gravityX * n.gravityX + n.gravityY * n.gravityY);
     if (mag <= 0.0001f)
@@ -480,7 +480,7 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p, float x, float 
     {
         t = 1.0f;
     }
-    const float len = R * (0.25f + 0.75f * t);
+    const float len = r * (0.25f + 0.75f * t);
     const float ux = n.gravityX / mag;
     const float uy = -n.gravityY / mag;  // domain Y is up, screen Y is down
 
@@ -822,7 +822,7 @@ void GizmoDraw(uint32_t typeId, const void* instance, float x, float y, float w,
 
 }  // namespace
 
-DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticles_GizmoOps()
+DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticlesGizmoOps()
 {
     DekiNodeGraph::NodeGraphNodeGizmoOps ops;
     ops.height = &GizmoHeight;

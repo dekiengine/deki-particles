@@ -6,8 +6,8 @@ namespace DekiParticles
 
 ParticleSystem& ParticleSystem::GetInstance()
 {
-    static ParticleSystem s_instance;
-    return s_instance;
+    static ParticleSystem s_Instance;
+    return s_Instance;
 }
 
 void ParticleSystem::RegisterEmitter(ParticleEmitterComponent* emitter)

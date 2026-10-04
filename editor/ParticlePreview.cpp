@@ -292,10 +292,10 @@ DekiNodeGraph::NodeGraphPreviewOps MakePreviewOps()
 
 }  // namespace
 
-DekiNodeGraph::NodeGraphPreviewOps DekiParticles_PreviewOps()
+DekiNodeGraph::NodeGraphPreviewOps DekiParticlesPreviewOps()
 {
-    static const DekiNodeGraph::NodeGraphPreviewOps ops = MakePreviewOps();
-    return ops;
+    static const DekiNodeGraph::NodeGraphPreviewOps kOps = MakePreviewOps();
+    return kOps;
 }
 
 #endif  // DEKI_EDITOR

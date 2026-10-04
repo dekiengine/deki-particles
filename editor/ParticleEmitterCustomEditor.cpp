@@ -84,8 +84,8 @@ public:
         float dtSeconds = 0.0f;
         if (last.time_since_epoch().count() != 0)
         {
-            using fsec = std::chrono::duration<float>;
-            dtSeconds = std::chrono::duration_cast<fsec>(now - last).count();
+            using Fsec = std::chrono::duration<float>;
+            dtSeconds = std::chrono::duration_cast<Fsec>(now - last).count();
         }
         last = now;
 
