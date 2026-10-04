@@ -58,9 +58,9 @@ struct ParticleEmitNode
 
 enum class EmitterShapeKind : uint8_t
 {
-    Point  = 0,
+    Point = 0,
     Circle = 1,
-    Rect   = 2,
+    Rect = 2,
 };
 
 // Spawning: how often, where, and for how long. Continuous and burst are
@@ -90,17 +90,17 @@ public:
     DEKI_GROUP("Continuous")
     DEKI_EXPORT
     DEKI_RANGE(0, 1000)
-    float emissionRate = 20.0f;       // particles/second (0 = disable continuous)
+    float emissionRate = 20.0f;  // particles/second (0 = disable continuous)
 
     // ---- Burst -------------------------------------------------------------
     DEKI_GROUP("Burst")
     DEKI_EXPORT
     DEKI_RANGE(0, 1000)
-    int32_t burstCount = 0;           // particles per burst (0 = no burst)
+    int32_t burstCount = 0;  // particles per burst (0 = no burst)
 
     DEKI_EXPORT
     DEKI_RANGE(0, 60)
-    float burstInterval = 0.0f;       // seconds between bursts (0 = single burst at start)
+    float burstInterval = 0.0f;  // seconds between bursts (0 = single burst at start)
 
     // ---- Shape -------------------------------------------------------------
     // Sampled in emitter-local space; the emitter's world position is added on
@@ -145,17 +145,17 @@ public:
     DEKI_EXPORT
     DEKI_RANGE(-50.0f, 50.0f)
     DEKI_UNIT(Velocity)
-    float speedMin = 2.0f;            // m/s
+    float speedMin = 2.0f;  // m/s
 
     DEKI_EXPORT
     DEKI_RANGE(-50.0f, 50.0f)
     DEKI_UNIT(Velocity)
-    float speedMax = 2.0f;            // m/s
+    float speedMax = 2.0f;  // m/s
 
     DEKI_EXPORT
     DEKI_RANGE(-Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
-    float angleMin = 0.0f;            // radians, 0 = +X right, pi/2 = +Y up
+    float angleMin = 0.0f;  // radians, 0 = +X right, pi/2 = +Y up
 
     DEKI_EXPORT
     DEKI_RANGE(-Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
@@ -178,7 +178,7 @@ public:
     DEKI_EXPORT
     DEKI_RANGE(-Deki::Math::kTwoPi, Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
-    float rotationMin = 0.0f;          // radians
+    float rotationMin = 0.0f;  // radians
 
     DEKI_EXPORT
     DEKI_RANGE(-Deki::Math::kTwoPi, Deki::Math::kTwoPi)
@@ -188,7 +188,7 @@ public:
     DEKI_EXPORT
     DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
-    float spinSpeedMin = 0.0f;         // radians per second
+    float spinSpeedMin = 0.0f;  // radians per second
 
     DEKI_EXPORT
     DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
@@ -214,12 +214,12 @@ public:
     DEKI_EXPORT
     DEKI_RANGE(-100.0f, 100.0f)
     DEKI_UNIT(Acceleration)
-    float gravityX = 0.0f;             // m/s^2
+    float gravityX = 0.0f;  // m/s^2
 
     DEKI_EXPORT
     DEKI_RANGE(-100.0f, 100.0f)
     DEKI_UNIT(Acceleration)
-    float gravityY = -9.8f;            // m/s^2 (world Y+ is up; gravity pulls down)
+    float gravityY = -9.8f;  // m/s^2 (world Y+ is up; gravity pulls down)
 };
 
 // Wire it after Gravity, or the force is undone the moment it is applied.
@@ -235,7 +235,7 @@ public:
 
     DEKI_EXPORT
     DEKI_RANGE(0.0f, 20.0f)
-    float drag = 1.0f;   // 1/sec — at 1.0 a particle loses ~63% of its speed per second
+    float drag = 1.0f;  // 1/sec — at 1.0 a particle loses ~63% of its speed per second
 };
 
 // ---------------------------------------------------------------------------
@@ -291,12 +291,12 @@ public:
     DEKI_EXPORT
     DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
-    float spinSpeedAt0 = 0.0f;          // radians/sec at birth
+    float spinSpeedAt0 = 0.0f;  // radians/sec at birth
 
     DEKI_EXPORT
     DEKI_RANGE(-2.0f * Deki::Math::kTwoPi, 2.0f * Deki::Math::kTwoPi)
     DEKI_UNIT(Angle)
-    float spinSpeedAt1 = 0.0f;          // radians/sec at death
+    float spinSpeedAt1 = 0.0f;  // radians/sec at death
 };
 
 #include "generated/ParticleEmitNode.gen.h"

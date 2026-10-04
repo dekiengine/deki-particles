@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DekiParticlesAPI.h"
-#include <deki/Component.h>   // DekiHashString (used by the registration macro)
+#include <deki/Component.h>  // DekiHashString (used by the registration macro)
 
 #include <cstddef>
 #include <cstdint>
@@ -81,12 +81,13 @@ private:
 // Register runtime ops for a modifier node struct (place at file scope in a
 // .cpp, next to the callbacks). ClassName must be a DEKI_NODE type; the key is
 // the hash of its node name, matching what the graph loader stores.
-#define REGISTER_PARTICLE_MODIFIER(ClassName, Ops) \
-    static struct ClassName##_ParticleModifierRegistrar { \
-        ClassName##_ParticleModifierRegistrar() { \
-            ParticleModifierRegistry::Instance().Register( \
-                ::Deki::HashString(ClassName::StaticNodeName), Ops); \
-        } \
+#define REGISTER_PARTICLE_MODIFIER(ClassName, Ops)                                                                     \
+    static struct ClassName##_ParticleModifierRegistrar                                                                \
+    {                                                                                                                  \
+        ClassName##_ParticleModifierRegistrar()                                                                        \
+        {                                                                                                              \
+            ParticleModifierRegistry::Instance().Register(::Deki::HashString(ClassName::StaticNodeName), Ops);         \
+        }                                                                                                              \
     } s_##ClassName##_ParticleModifierRegistrar
 
 }  // namespace DekiParticles

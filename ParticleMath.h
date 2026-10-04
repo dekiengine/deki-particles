@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-namespace DekiParticles {
+namespace DekiParticles
+{
 
 // xorshift32 PRNG. One state per emitter; cheap and good enough for visuals.
 struct Xorshift32
@@ -21,15 +22,9 @@ struct Xorshift32
         return x;
     }
 
-    float NextFloat01()
-    {
-        return (NextU32() >> 8) * (1.0f / 16777216.0f);
-    }
+    float NextFloat01() { return (NextU32() >> 8) * (1.0f / 16777216.0f); }
 
-    float NextFloatRange(float lo, float hi)
-    {
-        return lo + (hi - lo) * NextFloat01();
-    }
+    float NextFloatRange(float lo, float hi) { return lo + (hi - lo) * NextFloat01(); }
 };
 
-} // namespace DekiParticles
+}  // namespace DekiParticles

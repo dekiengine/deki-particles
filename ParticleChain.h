@@ -24,15 +24,17 @@ namespace DekiParticles
 // private state blob, and the behavior to run.
 struct ParticleChainEntry
 {
-    const void*                data  = nullptr;   // node instance (owned by the graph)
-    void*                      state = nullptr;   // stateSize bytes, owned by the chain
-    const ParticleModifierOps* ops   = nullptr;
+    const void* data = nullptr;  // node instance (owned by the graph)
+    void* state = nullptr;       // stateSize bytes, owned by the chain
+    const ParticleModifierOps* ops = nullptr;
 };
 
 inline void FreeParticleChain(std::vector<ParticleChainEntry>& chain)
 {
     for (ParticleChainEntry& e : chain)
+    {
         Deki::Memory::Free(e.state);
+    }
     chain.clear();
 }
 
@@ -49,8 +51,8 @@ constexpr int kMaxParticleChainLength = 256;
  * quiet nothing this project refuses.
  */
 template <typename GraphT>
-bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId,
-                        std::vector<ParticleChainEntry>& out, const char** outError)
+bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId, std::vector<ParticleChainEntry>& out,
+                        const char** outError)
 {
     FreeParticleChain(out);
 
@@ -65,7 +67,9 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId,
     {
         const auto* next = graph.Next(node->id, 0);
         if (!next)
-            return !out.empty();   // End of the chain.
+        {
+            return !out.empty();  // End of the chain.
+        }
 
         const ParticleModifierOps* ops = ParticleModifierRegistry::Instance().Find(next->typeId);
         if (!ops)
@@ -77,15 +81,13 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId,
 
         ParticleChainEntry e;
         e.data = next->instance;
-        e.ops  = ops;
+        e.ops = ops;
         // Zero-initialized: every modifier's state starts at "nothing has
         // happened yet", which is what a fresh accumulator or latch means.
         // Memory zeroes what it hands back, so the {} is not lost. A modifier
         // whose state will not fit is refused rather than run uninitialised.
-        e.state = ops->stateSize
-                      ? Deki::Memory::AllocateArray<uint8_t>(ops->stateSize,
-                                                            Deki::Memory::Internal)
-                      : nullptr;
+        e.state =
+            ops->stateSize ? Deki::Memory::AllocateArray<uint8_t>(ops->stateSize, Deki::Memory::Internal) : nullptr;
         if (ops->stateSize && !e.state)
         {
             FreeParticleChain(out);

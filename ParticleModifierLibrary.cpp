@@ -47,7 +47,7 @@ struct EmissionState
 {
     float rateAccumulator;
     float burstTimer;
-    bool  firedFirstBurst;
+    bool firedFirstBurst;
 };
 
 void EmissionAttach(const void* /*data*/, void* state, ParticleEmitterComponent& /*emitter*/)
@@ -66,7 +66,10 @@ void EmissionEmit(const void* data, void* /*state*/, ParticleEmitterComponent& e
     float tN = emitter.rng.NextFloat01();
     float life = d->lifetimeMin + (d->lifetimeMax - d->lifetimeMin) * tN;
     static const float kMinLife = 0.001f;
-    if (life < kMinLife) life = kMinLife;
+    if (life < kMinLife)
+    {
+        life = kMinLife;
+    }
     emitter.pool.lifetime[i] = life;
 
     // 2. Spawn position — sample the configured shape in emitter-local space,
@@ -75,8 +78,7 @@ void EmissionEmit(const void* data, void* /*state*/, ParticleEmitterComponent& e
     float ox = 0.0f, oy = 0.0f;
     switch (d->shape)
     {
-        case EmitterShapeKind::Point:
-            break;
+        case EmitterShapeKind::Point: break;
         case EmitterShapeKind::Circle:
         {
             // Uniform sample inside disc: r = R*sqrt(u), theta = 2pi*v.
@@ -140,7 +142,12 @@ void EmissionSimulate(const void* data, void* state, ParticleEmitterComponent& e
         if (!s->firedFirstBurst)
         {
             for (int n = 0; n < d->burstCount; ++n)
-                if (emitter.Spawn() < 0) break;
+            {
+                if (emitter.Spawn() < 0)
+                {
+                    break;
+                }
+            }
             s->firedFirstBurst = true;
             s->burstTimer = 0.0f;
         }
@@ -151,7 +158,12 @@ void EmissionSimulate(const void* data, void* state, ParticleEmitterComponent& e
             {
                 s->burstTimer -= d->burstInterval;
                 for (int n = 0; n < d->burstCount; ++n)
-                    if (emitter.Spawn() < 0) break;
+                {
+                    if (emitter.Spawn() < 0)
+                    {
+                        break;
+                    }
+                }
             }
         }
     }
@@ -196,7 +208,9 @@ void InitialRotationSimulate(const void* /*data*/, void* /*state*/, ParticleEmit
     float* rot = emitter.pool.rotation.Data();
     float* spd = emitter.pool.rotationSpeed.Data();
     for (int i = 0; i < n; ++i)
+    {
         rot[i] += spd[i] * dt;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +242,10 @@ void DragSimulate(const void* data, void* /*state*/, ParticleEmitterComponent& e
     const auto* d = static_cast<const ParticleDragNode*>(data);
     // k = max(0, 1 - drag*dt)
     float k = 1.0f - d->drag * dt;
-    if (k < 0.0f) k = 0.0f;
+    if (k < 0.0f)
+    {
+        k = 0.0f;
+    }
     int n = emitter.pool.AliveCount();
     float* vx = emitter.pool.velX.Data();
     float* vy = emitter.pool.velY.Data();
@@ -252,15 +269,18 @@ void SizeOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitter
 {
     const auto* d = static_cast<const ParticleSizeOverLifetimeNode*>(data);
     int n = emitter.pool.AliveCount();
-    float* age  = emitter.pool.age.Data();
+    float* age = emitter.pool.age.Data();
     float* life = emitter.pool.lifetime.Data();
-    float* sc   = emitter.pool.scale.Data();
+    float* sc = emitter.pool.scale.Data();
     float s0 = d->sizeAt0;
     float ds = d->sizeAt1 - d->sizeAt0;
     for (int i = 0; i < n; ++i)
     {
         float t = (life[i] > 0.0f) ? (age[i] / life[i]) : 0.0f;
-        if (t > 1.0f) t = 1.0f;
+        if (t > 1.0f)
+        {
+            t = 1.0f;
+        }
         sc[i] = s0 + ds * t;
     }
 }
@@ -278,7 +298,7 @@ void ColorOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitte
 {
     const auto* d = static_cast<const ParticleColorOverLifetimeNode*>(data);
     int n = emitter.pool.AliveCount();
-    float* age  = emitter.pool.age.Data();
+    float* age = emitter.pool.age.Data();
     float* life = emitter.pool.lifetime.Data();
     uint8_t* tR = emitter.pool.tintR.Data();
     uint8_t* tG = emitter.pool.tintG.Data();
@@ -296,7 +316,10 @@ void ColorOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitte
     for (int i = 0; i < n; ++i)
     {
         float t = (life[i] > 0.0f) ? (age[i] / life[i]) : 0.0f;
-        if (t > 1.0f) t = 1.0f;
+        if (t > 1.0f)
+        {
+            t = 1.0f;
+        }
         // 8.8 fixed-point lerp avoids the float-to-int truncation pattern in
         // the hot loop on MCUs without fast int-from-float.
         int ti = static_cast<int>(t * k256);
@@ -324,86 +347,110 @@ void RotationOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmi
     // so integration is a simple unit-agnostic accumulate.
     float a0 = d->spinSpeedAt0;
     float da = d->spinSpeedAt1 - a0;
-    float* age  = emitter.pool.age.Data();
+    float* age = emitter.pool.age.Data();
     float* life = emitter.pool.lifetime.Data();
-    float* rot  = emitter.pool.rotation.Data();
+    float* rot = emitter.pool.rotation.Data();
     for (int i = 0; i < n; ++i)
     {
         float t = (life[i] > 0.0f) ? (age[i] / life[i]) : 0.0f;
-        if (t > 1.0f) t = 1.0f;
+        if (t > 1.0f)
+        {
+            t = 1.0f;
+        }
         float spd = a0 + da * t;
         rot[i] += spd * dt;
     }
 }
 
-} // namespace
+}  // namespace
 
 // ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------
 
-REGISTER_PARTICLE_MODIFIER(ParticleEmissionNode, ([] {
-    ParticleModifierOps ops;
-    ops.stateSize  = sizeof(EmissionState);
-    ops.onAttach   = &EmissionAttach;
-    ops.onEmit     = &EmissionEmit;
-    ops.onSimulate = &EmissionSimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleEmissionNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleEmissionNode, (
+                                                     []
+                                                     {
+                                                         ParticleModifierOps ops;
+                                                         ops.stateSize = sizeof(EmissionState);
+                                                         ops.onAttach = &EmissionAttach;
+                                                         ops.onEmit = &EmissionEmit;
+                                                         ops.onSimulate = &EmissionSimulate;
+                                                         ops.isEnabled = &NodeEnabled<ParticleEmissionNode>;
+                                                         return ops;
+                                                     }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleInitialVelocityNode, ([] {
-    ParticleModifierOps ops;
-    ops.onEmit    = &InitialVelocityEmit;
-    ops.isEnabled = &NodeEnabled<ParticleInitialVelocityNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleInitialVelocityNode, (
+                                                            []
+                                                            {
+                                                                ParticleModifierOps ops;
+                                                                ops.onEmit = &InitialVelocityEmit;
+                                                                ops.isEnabled =
+                                                                    &NodeEnabled<ParticleInitialVelocityNode>;
+                                                                return ops;
+                                                            }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleInitialRotationNode, ([] {
-    ParticleModifierOps ops;
-    ops.onAttach   = &InitialRotationAttach;
-    ops.onEmit     = &InitialRotationEmit;
-    ops.onSimulate = &InitialRotationSimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleInitialRotationNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleInitialRotationNode, (
+                                                            []
+                                                            {
+                                                                ParticleModifierOps ops;
+                                                                ops.onAttach = &InitialRotationAttach;
+                                                                ops.onEmit = &InitialRotationEmit;
+                                                                ops.onSimulate = &InitialRotationSimulate;
+                                                                ops.isEnabled =
+                                                                    &NodeEnabled<ParticleInitialRotationNode>;
+                                                                return ops;
+                                                            }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleGravityNode, ([] {
-    ParticleModifierOps ops;
-    ops.onSimulate = &GravitySimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleGravityNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleGravityNode, (
+                                                    []
+                                                    {
+                                                        ParticleModifierOps ops;
+                                                        ops.onSimulate = &GravitySimulate;
+                                                        ops.isEnabled = &NodeEnabled<ParticleGravityNode>;
+                                                        return ops;
+                                                    }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleDragNode, ([] {
-    ParticleModifierOps ops;
-    ops.onSimulate = &DragSimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleDragNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleDragNode, (
+                                                 []
+                                                 {
+                                                     ParticleModifierOps ops;
+                                                     ops.onSimulate = &DragSimulate;
+                                                     ops.isEnabled = &NodeEnabled<ParticleDragNode>;
+                                                     return ops;
+                                                 }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleSizeOverLifetimeNode, ([] {
-    ParticleModifierOps ops;
-    ops.onAttach   = &SizeOverLifetimeAttach;
-    ops.onSimulate = &SizeOverLifetimeSimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleSizeOverLifetimeNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleSizeOverLifetimeNode, (
+                                                             []
+                                                             {
+                                                                 ParticleModifierOps ops;
+                                                                 ops.onAttach = &SizeOverLifetimeAttach;
+                                                                 ops.onSimulate = &SizeOverLifetimeSimulate;
+                                                                 ops.isEnabled =
+                                                                     &NodeEnabled<ParticleSizeOverLifetimeNode>;
+                                                                 return ops;
+                                                             }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleColorOverLifetimeNode, ([] {
-    ParticleModifierOps ops;
-    ops.onAttach   = &ColorOverLifetimeAttach;
-    ops.onSimulate = &ColorOverLifetimeSimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleColorOverLifetimeNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleColorOverLifetimeNode, (
+                                                              []
+                                                              {
+                                                                  ParticleModifierOps ops;
+                                                                  ops.onAttach = &ColorOverLifetimeAttach;
+                                                                  ops.onSimulate = &ColorOverLifetimeSimulate;
+                                                                  ops.isEnabled =
+                                                                      &NodeEnabled<ParticleColorOverLifetimeNode>;
+                                                                  return ops;
+                                                              }()));
 
-REGISTER_PARTICLE_MODIFIER(ParticleRotationOverLifetimeNode, ([] {
-    ParticleModifierOps ops;
-    ops.onAttach   = &RotationOverLifetimeAttach;
-    ops.onSimulate = &RotationOverLifetimeSimulate;
-    ops.isEnabled  = &NodeEnabled<ParticleRotationOverLifetimeNode>;
-    return ops;
-}()));
+REGISTER_PARTICLE_MODIFIER(ParticleRotationOverLifetimeNode, (
+                                                                 []
+                                                                 {
+                                                                     ParticleModifierOps ops;
+                                                                     ops.onAttach = &RotationOverLifetimeAttach;
+                                                                     ops.onSimulate = &RotationOverLifetimeSimulate;
+                                                                     ops.isEnabled =
+                                                                         &NodeEnabled<ParticleRotationOverLifetimeNode>;
+                                                                     return ops;
+                                                                 }()));
 
 }  // namespace DekiParticles

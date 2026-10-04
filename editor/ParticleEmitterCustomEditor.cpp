@@ -41,19 +41,25 @@ namespace DekiEditor
 
 namespace
 {
-    // The shape the gizmo draws lives in the graph's first Emission node.
-    // Reading it here rather than caching keeps the gizmo honest while the
-    // graph is being edited in the other window.
-    const ParticleEmissionNode* FindEmission(DekiParticles::ParticleEmitterComponent* emitter)
+// The shape the gizmo draws lives in the graph's first Emission node.
+// Reading it here rather than caching keeps the gizmo honest while the
+// graph is being edited in the other window.
+const ParticleEmissionNode* FindEmission(DekiParticles::ParticleEmitterComponent* emitter)
+{
+    ParticleGraph* g = emitter->graph.Get();
+    if (!g || !g->data)
     {
-        ParticleGraph* g = emitter->graph.Get();
-        if (!g || !g->data) return nullptr;
-        const DekiNodeGraph::NodeGraphData::NodeInstance* node = g->data->Root().FindFirstOfType(
-            Deki::HashString(ParticleEmissionNode::StaticNodeName));
-        if (!node || !node->instance) return nullptr;
-        return static_cast<const ParticleEmissionNode*>(node->instance);
+        return nullptr;
     }
+    const DekiNodeGraph::NodeGraphData::NodeInstance* node =
+        g->data->Root().FindFirstOfType(Deki::HashString(ParticleEmissionNode::StaticNodeName));
+    if (!node || !node->instance)
+    {
+        return nullptr;
+    }
+    return static_cast<const ParticleEmissionNode*>(node->instance);
 }
+}  // namespace
 
 class ParticleEmitterCustomEditor : public CustomEditor
 {
@@ -65,7 +71,10 @@ public:
     void OnEditorUpdate(Deki::Component* comp) override
     {
         auto* emitter = static_cast<DekiParticles::ParticleEmitterComponent*>(comp);
-        if (!emitter) return;
+        if (!emitter)
+        {
+            return;
+        }
 
         // Measure the editor frame delta locally — Deki::Time::GetDeltaTimeF()
         // only ticks in Play mode, so in edit mode it always reads 0 and the
@@ -86,14 +95,20 @@ public:
             m_StepRequested.erase(emitter);
             emitter->Simulate(1.0f / 60.0f);
         }
-        if (!emitter->IsEditorPreviewPlaying()) return;
+        if (!emitter->IsEditorPreviewPlaying())
+        {
+            return;
+        }
         emitter->Simulate(dtSeconds * GetSpeed(emitter));
     }
 
     void OnInspectorGUI(Deki::Component* comp) override
     {
         auto* emitter = static_cast<DekiParticles::ParticleEmitterComponent*>(comp);
-        if (!emitter) return;
+        if (!emitter)
+        {
+            return;
+        }
 
         EditorUI::Get().DrawDefaultInspector();
         DrawPreviewSection(emitter);
@@ -107,10 +122,16 @@ public:
     void OnDrawGizmosSelected(Deki::Component* comp) override
     {
         auto* emitter = static_cast<DekiParticles::ParticleEmitterComponent*>(comp);
-        if (!emitter || !emitter->GetOwner()) return;
+        if (!emitter || !emitter->GetOwner())
+        {
+            return;
+        }
 
         const ParticleEmissionNode* em = FindEmission(emitter);
-        if (!em) return;
+        if (!em)
+        {
+            return;
+        }
 
         auto& view = SceneView::Get();
 
@@ -119,7 +140,7 @@ public:
         // Crosshair: fixed-screen accent — scales with editor wheel zoom only.
         // Shape extents (radius/width/height): world meters — scale by
         // GetWorldToScreenScale so they match the rendered emission area.
-        const float zoom      = view.GetZoom();
+        const float zoom = view.GetZoom();
         const float worldToPx = view.GetWorldToScreenScale();
         const uint32_t color = SceneView::Rgba(255, 200, 60, 220);
 
@@ -136,24 +157,31 @@ public:
             {
                 const float r = em->radius * worldToPx;
                 if (r > 0.5f)
+                {
                     view.DrawCircle(cx, cy, r, color, 1.0f);
+                }
                 break;
             }
             case EmitterShapeKind::Rect:
             {
-                const float halfW = 0.5f * em->width  * worldToPx;
+                const float halfW = 0.5f * em->width * worldToPx;
                 const float halfH = 0.5f * em->height * worldToPx;
                 if (halfW > 0.5f && halfH > 0.5f)
+                {
                     view.DrawRect(cx - halfW, cy - halfH, cx + halfW, cy + halfH, color, 1.0f);
+                }
                 break;
             }
         }
     }
 
 private:
-    struct EditorState { float speed = 1.0f; };
+    struct EditorState
+    {
+        float speed = 1.0f;
+    };
     std::unordered_map<DekiParticles::ParticleEmitterComponent*, EditorState> m_State;
-    std::unordered_map<DekiParticles::ParticleEmitterComponent*, bool>        m_StepRequested;
+    std::unordered_map<DekiParticles::ParticleEmitterComponent*, bool> m_StepRequested;
     std::unordered_map<DekiParticles::ParticleEmitterComponent*, std::chrono::steady_clock::time_point> m_LastTick;
 
     float GetSpeed(DekiParticles::ParticleEmitterComponent* e)
@@ -183,20 +211,26 @@ private:
         const bool playing = emitter->IsEditorPreviewPlaying();
         const char* playLabel = playing ? ICON_TI_PLAYER_PAUSE " Pause" : ICON_TI_PLAYER_PLAY " Play";
         if (ui.Button(playLabel))
+        {
             emitter->EditorPreviewSetPlaying(!playing);
+        }
         ui.SameLine();
         if (ui.Button(ICON_TI_PLAYER_SKIP_FORWARD " Step"))
+        {
             m_StepRequested[emitter] = true;
+        }
         ui.SameLine();
         // Restart also rebuilds the chain, so it is how a reimported graph
         // reaches this preview.
         if (ui.Button(ICON_TI_ROTATE " Restart"))
+        {
             emitter->EditorPreviewRestart();
+        }
         ui.SameLine();
         ui.AlignTextToFramePadding();
         char aliveBuf[64];
-        std::snprintf(aliveBuf, sizeof(aliveBuf), "%d / %d alive",
-                      emitter->pool.AliveCount(), emitter->pool.Capacity());
+        std::snprintf(aliveBuf, sizeof(aliveBuf), "%d / %d alive", emitter->pool.AliveCount(),
+                      emitter->pool.Capacity());
         ui.TextDisabled(aliveBuf);
 
         // Editor-only preview speed (not document state) -> low-level, no undo.
@@ -208,6 +242,6 @@ private:
 
 REGISTER_EDITOR(ParticleEmitterCustomEditor)
 
-} // namespace DekiEditor
+}  // namespace DekiEditor
 
-#endif // DEKI_EDITOR
+#endif  // DEKI_EDITOR

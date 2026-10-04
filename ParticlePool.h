@@ -6,7 +6,8 @@
 #include <deki/LogSystem.h>
 #include <deki/providers/Buffer.h>
 
-namespace DekiParticles {
+namespace DekiParticles
+{
 
 /**
  * @brief Struct-of-arrays particle storage with lazy optional columns.
@@ -35,11 +36,17 @@ public:
 public:
     void SetCapacity(int newCapacity)
     {
-        if (newCapacity == m_Capacity) return;
+        if (newCapacity == m_Capacity)
+        {
+            return;
+        }
         Free();
         m_Capacity = newCapacity;
         m_AliveCount = 0;
-        if (newCapacity <= 0) return;
+        if (newCapacity <= 0)
+        {
+            return;
+        }
 
         // Time columns (age/lifetime) are seconds; spatial columns are meters.
         // Internal because every column is walked every frame, and external
@@ -55,20 +62,22 @@ public:
         // by every update.
         if (!posX || !posY || !velX || !velY || !age || !lifetime)
         {
-            DEKI_LOG_WARNING("ParticlePool: no room for %d particles; the emitter is empty",
-                             newCapacity);
+            DEKI_LOG_WARNING("ParticlePool: no room for %d particles; the emitter is empty", newCapacity);
             Free();
             m_Capacity = 0;
         }
     }
 
-    int  Capacity() const { return m_Capacity; }
-    int  AliveCount() const { return m_AliveCount; }
+    int Capacity() const { return m_Capacity; }
+    int AliveCount() const { return m_AliveCount; }
 
     // Spawn a new particle slot. Returns -1 if pool is full.
-    int  Spawn()
+    int Spawn()
     {
-        if (m_AliveCount >= m_Capacity) return -1;
+        if (m_AliveCount >= m_Capacity)
+        {
+            return -1;
+        }
         int idx = m_AliveCount++;
         return idx;
     }
@@ -77,9 +86,12 @@ public:
     // responsible for swapping any optional columns it cares about.
     // Returns the index that the formerly-last particle was moved to
     // (== idx), or -1 if idx was already past the alive range.
-    int  KillSwap(int idx)
+    int KillSwap(int idx)
     {
-        if (idx < 0 || idx >= m_AliveCount) return -1;
+        if (idx < 0 || idx >= m_AliveCount)
+        {
+            return -1;
+        }
         int last = m_AliveCount - 1;
         if (idx != last)
         {
@@ -89,9 +101,22 @@ public:
             velY[idx] = velY[last];
             age[idx] = age[last];
             lifetime[idx] = lifetime[last];
-            if (m_HasRotation)      { rotation[idx] = rotation[last]; rotationSpeed[idx] = rotationSpeed[last]; }
-            if (m_HasScale)         { scale[idx] = scale[last]; }
-            if (m_HasTint)          { tintR[idx] = tintR[last]; tintG[idx] = tintG[last]; tintB[idx] = tintB[last]; tintA[idx] = tintA[last]; }
+            if (m_HasRotation)
+            {
+                rotation[idx] = rotation[last];
+                rotationSpeed[idx] = rotationSpeed[last];
+            }
+            if (m_HasScale)
+            {
+                scale[idx] = scale[last];
+            }
+            if (m_HasTint)
+            {
+                tintR[idx] = tintR[last];
+                tintG[idx] = tintG[last];
+                tintB[idx] = tintB[last];
+                tintA[idx] = tintA[last];
+            }
         }
         m_AliveCount--;
         return idx;
@@ -100,7 +125,10 @@ public:
     // Optional columns — allocated on first request. Idempotent.
     void EnsureRotation()
     {
-        if (m_HasRotation || m_Capacity <= 0) return;
+        if (m_HasRotation || m_Capacity <= 0)
+        {
+            return;
+        }
         rotation.Allocate(m_Capacity, Deki::Memory::Internal);
         rotationSpeed.Allocate(m_Capacity, Deki::Memory::Internal);
         if (!rotation || !rotationSpeed)
@@ -113,15 +141,27 @@ public:
     }
     void EnsureScale()
     {
-        if (m_HasScale || m_Capacity <= 0) return;
+        if (m_HasScale || m_Capacity <= 0)
+        {
+            return;
+        }
         scale.Allocate(m_Capacity, Deki::Memory::Internal);
-        if (!scale) return;  // stays disabled; particles keep their size
-        for (int i = 0; i < m_Capacity; ++i) scale[i] = 1.0f;
+        if (!scale)
+        {
+            return;  // stays disabled; particles keep their size
+        }
+        for (int i = 0; i < m_Capacity; ++i)
+        {
+            scale[i] = 1.0f;
+        }
         m_HasScale = true;
     }
     void EnsureTint()
     {
-        if (m_HasTint || m_Capacity <= 0) return;
+        if (m_HasTint || m_Capacity <= 0)
+        {
+            return;
+        }
         tintR.Allocate(m_Capacity, Deki::Memory::Internal);
         tintG.Allocate(m_Capacity, Deki::Memory::Internal);
         tintB.Allocate(m_Capacity, Deki::Memory::Internal);
@@ -142,8 +182,8 @@ public:
     }
 
     bool HasRotation() const { return m_HasRotation; }
-    bool HasScale() const    { return m_HasScale; }
-    bool HasTint() const     { return m_HasTint; }
+    bool HasScale() const { return m_HasScale; }
+    bool HasTint() const { return m_HasTint; }
 
     // Always-present columns (public for tight inner loops). Spatial columns
     // in meters, time columns (age/lifetime) in seconds.
@@ -156,8 +196,8 @@ public:
 
     // Optional columns (nullptr until corresponding Ensure* called).
     // rotation is in radians (engine convention).
-    Deki::Buffer<float> rotation;        // radians
-    Deki::Buffer<float> rotationSpeed;   // radians/sec
+    Deki::Buffer<float> rotation;       // radians
+    Deki::Buffer<float> rotationSpeed;  // radians/sec
     Deki::Buffer<float> scale;
     Deki::Buffer<uint8_t> tintR;
     Deki::Buffer<uint8_t> tintG;
@@ -165,8 +205,8 @@ public:
     Deki::Buffer<uint8_t> tintA;
 
 private:
-    int  m_Capacity = 0;
-    int  m_AliveCount = 0;
+    int m_Capacity = 0;
+    int m_AliveCount = 0;
     bool m_HasRotation = false;
     bool m_HasScale = false;
     bool m_HasTint = false;
@@ -191,4 +231,4 @@ private:
     }
 };
 
-} // namespace DekiParticles
+}  // namespace DekiParticles

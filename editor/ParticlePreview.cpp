@@ -49,8 +49,8 @@ constexpr int kPreviewMaxParticles = 512;
 struct ParticlePreviewState
 {
     ParticleEmitterComponent emitter;
-    uint64_t topology = 0;      // signature of the last graph the chain was built from
-    bool     built = false;
+    uint64_t topology = 0;  // signature of the last graph the chain was built from
+    bool built = false;
 };
 
 // Cheap signature of what the chain depends on: which nodes exist, of what
@@ -59,8 +59,9 @@ struct ParticlePreviewState
 // rebuild and must not cause one.
 uint64_t TopologyOf(const DekiNodeGraph::NodeGraphPreviewGraph& graph)
 {
-    uint64_t h = 1469598103934665603ull;   // FNV-1a 64
-    auto mix = [&h](uint64_t v) {
+    uint64_t h = 1469598103934665603ull;  // FNV-1a 64
+    auto mix = [&h](uint64_t v)
+    {
         h ^= v;
         h *= 1099511628211ull;
     };
@@ -82,14 +83,22 @@ uint64_t TopologyOf(const DekiNodeGraph::NodeGraphPreviewGraph& graph)
 
 // Polyline ring: the canvas has a filled circle and a line, and an outline is
 // the one thing a shape gizmo actually needs.
-void StrokeCircle(const DekiNodeGraph::NodeGraphPreviewCanvas& canvas, float cx, float cy, float r,
-                  uint32_t rgba, float thickness)
+void StrokeCircle(const DekiNodeGraph::NodeGraphPreviewCanvas& canvas, float cx, float cy, float r, uint32_t rgba,
+                  float thickness)
 {
     if (r <= 0.5f)
+    {
         return;
+    }
     int seg = static_cast<int>(r * 0.9f);
-    if (seg < 16) seg = 16;
-    if (seg > 96) seg = 96;
+    if (seg < 16)
+    {
+        seg = 16;
+    }
+    if (seg > 96)
+    {
+        seg = 96;
+    }
     float px = cx + r, py = cy;
     for (int i = 1; i <= seg; ++i)
     {
@@ -108,13 +117,15 @@ void StrokeCircle(const DekiNodeGraph::NodeGraphPreviewCanvas& canvas, float cx,
 // together, so a 0.3 m circle looks 0.3 m next to the spray leaving it. Kept
 // faint and drawn under the particles - the effect is the subject, this is the
 // frame around it.
-void DrawEmitterShape(const DekiNodeGraph::NodeGraphPreviewGraph& graph, float cx, float cy,
-                      float pixelsPerMeter, const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
+void DrawEmitterShape(const DekiNodeGraph::NodeGraphPreviewGraph& graph, float cx, float cy, float pixelsPerMeter,
+                      const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
 {
     const DekiNodeGraph::NodeGraphPreviewNode* node =
         graph.FindFirstOfType(Deki::HashString(ParticleEmissionNode::StaticNodeName));
     if (!node || !node->instance)
+    {
         return;
+    }
     const auto& e = *static_cast<const ParticleEmissionNode*>(node->instance);
 
     const uint32_t line = DekiNodeGraph::NodeGraphPreviewRgba(122, 190, 255, e.enabled ? 90 : 40);
@@ -122,12 +133,10 @@ void DrawEmitterShape(const DekiNodeGraph::NodeGraphPreviewGraph& graph, float c
 
     switch (e.shape)
     {
-        case EmitterShapeKind::Circle:
-            StrokeCircle(canvas, cx, cy, e.radius * pixelsPerMeter, line, 1.0f);
-            break;
+        case EmitterShapeKind::Circle: StrokeCircle(canvas, cx, cy, e.radius * pixelsPerMeter, line, 1.0f); break;
         case EmitterShapeKind::Rect:
         {
-            const float hw = e.width  * 0.5f * pixelsPerMeter;
+            const float hw = e.width * 0.5f * pixelsPerMeter;
             const float hh = e.height * 0.5f * pixelsPerMeter;
             if (hw > 0.5f || hh > 0.5f)
             {
@@ -139,8 +148,7 @@ void DrawEmitterShape(const DekiNodeGraph::NodeGraphPreviewGraph& graph, float c
             break;
         }
         case EmitterShapeKind::Point:
-        default:
-            break;
+        default: break;
     }
 
     // Origin, always: with a Point shape it is the whole gizmo, and with the
@@ -171,14 +179,15 @@ void PreviewReset(void* preview)
     // Drop every live particle and force a rebuild, which re-zeroes the state
     // blobs (burst latch, rate accumulator).
     while (p->emitter.pool.AliveCount() > 0)
+    {
         p->emitter.pool.KillSwap(p->emitter.pool.AliveCount() - 1);
+    }
     p->built = false;
     p->topology = 0;
 }
 
-void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& graph, float dt,
-                 float x, float y, float w, float h, float pixelsPerMeter,
-                 const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
+void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& graph, float dt, float x, float y, float w,
+                 float h, float pixelsPerMeter, const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
 {
     auto* p = static_cast<ParticlePreviewState*>(preview);
 
@@ -189,8 +198,7 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
         const char* error = nullptr;
         // A half-wired graph is the normal state while authoring, so a failed
         // build is not worth logging here: the panel simply shows nothing.
-        if (DekiParticles::BuildParticleChain(graph, Deki::HashString(ParticleEmitNode::StaticNodeName),
-                               chain, &error))
+        if (DekiParticles::BuildParticleChain(graph, Deki::HashString(ParticleEmitNode::StaticNodeName), chain, &error))
         {
             p->emitter.AdoptChain(std::move(chain));
             p->built = true;
@@ -203,7 +211,9 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
     }
 
     if (p->built && dt > 0.0f)
+    {
         p->emitter.Simulate(dt);
+    }
 
     // Origin at the centre of the preview rect, Y up (world convention) mapped
     // to Y down (screen).
@@ -215,7 +225,9 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
     DrawEmitterShape(graph, cx, cy, pixelsPerMeter, canvas);
 
     if (!p->built)
+    {
         return;
+    }
 
     auto& pool = p->emitter.pool;
     const int n = pool.AliveCount();
@@ -228,21 +240,30 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
 
         const float scale = pool.HasScale() ? pool.scale[i] : 1.0f;
         float radius = baseRadius * scale;
-        if (radius < 0.75f) radius = 0.75f;
+        if (radius < 0.75f)
+        {
+            radius = 0.75f;
+        }
 
         // Skip what falls outside the panel. The window clips too; this just
         // saves the draw calls for an effect that flies off screen.
-        if (px + radius < x || px - radius > x + w ||
-            py + radius < y || py - radius > y + h)
+        if (px + radius < x || px - radius > x + w || py + radius < y || py - radius > y + h)
+        {
             continue;
+        }
 
         uint8_t r = 255, g = 255, b = 255, a = 255;
         if (pool.HasTint())
         {
-            r = pool.tintR[i]; g = pool.tintG[i];
-            b = pool.tintB[i]; a = pool.tintA[i];
+            r = pool.tintR[i];
+            g = pool.tintG[i];
+            b = pool.tintB[i];
+            a = pool.tintA[i];
         }
-        if (a == 0) continue;
+        if (a == 0)
+        {
+            continue;
+        }
 
         const uint32_t rgba = DekiNodeGraph::NodeGraphPreviewRgba(r, g, b, a);
 
@@ -254,10 +275,7 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
         if (pool.HasRotation() && radius >= 2.0f)
         {
             const float ang = pool.rotation[i];
-            canvas.line(canvas.ctx, px, py,
-                        px + std::cos(ang) * radius,
-                        py - std::sin(ang) * radius,
-                        rgba, 1.0f);
+            canvas.line(canvas.ctx, px, py, px + std::cos(ang) * radius, py - std::sin(ang) * radius, rgba, 1.0f);
         }
     }
 }
@@ -265,14 +283,14 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
 DekiNodeGraph::NodeGraphPreviewOps MakePreviewOps()
 {
     DekiNodeGraph::NodeGraphPreviewOps ops;
-    ops.create  = &PreviewCreate;
+    ops.create = &PreviewCreate;
     ops.destroy = &PreviewDestroy;
-    ops.reset   = &PreviewReset;
-    ops.tick    = &PreviewTick;
+    ops.reset = &PreviewReset;
+    ops.tick = &PreviewTick;
     return ops;
 }
 
-} // namespace
+}  // namespace
 
 DekiNodeGraph::NodeGraphPreviewOps DekiParticles_PreviewOps()
 {
@@ -280,4 +298,4 @@ DekiNodeGraph::NodeGraphPreviewOps DekiParticles_PreviewOps()
     return ops;
 }
 
-#endif // DEKI_EDITOR
+#endif  // DEKI_EDITOR

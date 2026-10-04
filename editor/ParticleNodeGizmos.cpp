@@ -41,7 +41,7 @@ using namespace DekiParticles;
 namespace
 {
 
-constexpr float kPi    = Deki::Math::kPi;
+constexpr float kPi = Deki::Math::kPi;
 constexpr float kTwoPi = Deki::Math::kTwoPi;
 
 // ---------------------------------------------------------------------------
@@ -50,9 +50,18 @@ constexpr float kTwoPi = Deki::Math::kTwoPi;
 // recessed band the window puts behind a gizmo.
 // ---------------------------------------------------------------------------
 
-inline uint32_t Ink(uint8_t a)      { return DekiNodeGraph::NodeGraphPreviewRgba(122, 190, 255, a); }  // the subject
-inline uint32_t Warm(uint8_t a)     { return DekiNodeGraph::NodeGraphPreviewRgba(255, 186, 110, a); }  // motion / vectors
-inline uint32_t Neutral(uint8_t a)  { return DekiNodeGraph::NodeGraphPreviewRgba(255, 255, 255, a); }  // axes, particles
+inline uint32_t Ink(uint8_t a)
+{
+    return DekiNodeGraph::NodeGraphPreviewRgba(122, 190, 255, a);
+}  // the subject
+inline uint32_t Warm(uint8_t a)
+{
+    return DekiNodeGraph::NodeGraphPreviewRgba(255, 186, 110, a);
+}  // motion / vectors
+inline uint32_t Neutral(uint8_t a)
+{
+    return DekiNodeGraph::NodeGraphPreviewRgba(255, 255, 255, a);
+}  // axes, particles
 
 // ---------------------------------------------------------------------------
 // Drawing helpers over the three primitives.
@@ -71,7 +80,10 @@ struct Painter
     }
     void Dot(float x, float y, float r, uint32_t col) const
     {
-        if (r > 0.0f) c.circleFilled(c.ctx, x, y, r, col);
+        if (r > 0.0f)
+        {
+            c.circleFilled(c.ctx, x, y, r, col);
+        }
     }
     void FillRect(float x0, float y0, float x1, float y1, uint32_t col) const
     {
@@ -90,14 +102,23 @@ struct Painter
     int SegmentsFor(float r, float sweep) const
     {
         int n = static_cast<int>(r * std::fabs(sweep) * 0.25f);
-        if (n < 8)  n = 8;
-        if (n > 96) n = 96;
+        if (n < 8)
+        {
+            n = 8;
+        }
+        if (n > 96)
+        {
+            n = 96;
+        }
         return n;
     }
 
     void Arc(float cx, float cy, float r, float a0, float a1, uint32_t col, float th = 1.0f) const
     {
-        if (r <= 0.0f) return;
+        if (r <= 0.0f)
+        {
+            return;
+        }
         const int seg = SegmentsFor(r, a1 - a0);
         float px = cx + std::cos(a0) * r;
         float py = cy - std::sin(a0) * r;
@@ -128,10 +149,16 @@ struct Painter
         Line(x0, y0, x1, y1, col, th);
         const float dx = x1 - x0, dy = y1 - y0;
         const float len = std::sqrt(dx * dx + dy * dy);
-        if (len < 1.0f) return;
+        if (len < 1.0f)
+        {
+            return;
+        }
         const float ux = dx / len, uy = dy / len;
         float head = 7.0f * dpi;
-        if (head > len * 0.45f) head = len * 0.45f;
+        if (head > len * 0.45f)
+        {
+            head = len * 0.45f;
+        }
         const float wx = -uy * head * 0.55f, wy = ux * head * 0.55f;
         Line(x1, y1, x1 - ux * head + wx, y1 - uy * head + wy, col, th);
         Line(x1, y1, x1 - ux * head - wx, y1 - uy * head - wy, col, th);
@@ -160,14 +187,19 @@ struct Painter
             py[i] = cy - (ox[i] * sa + oy[i] * ca);
         }
         for (int i = 0; i < 4; ++i)
+        {
             Line(px[i], py[i], px[(i + 1) % 4], py[(i + 1) % 4], col, th);
+        }
     }
 };
 
 // Stable scatter for "particles spawn in here". Fixed at first use rather than
 // re-rolled per frame: dots that crawl while a radius is dragged read as the
 // effect doing something, which is exactly what a gizmo must not invent.
-struct Sample { float x, y; };
+struct Sample
+{
+    float x, y;
+};
 
 const Sample* UnitSamples(int& count)
 {
@@ -176,7 +208,8 @@ const Sample* UnitSamples(int& count)
     if (!built)
     {
         uint32_t seed = 0x9E3779B9u;
-        auto next = [&seed]() {
+        auto next = [&seed]()
+        {
             seed = seed * 1664525u + 1013904223u;
             return static_cast<float>((seed >> 8) & 0xFFFFFFu) * (1.0f / 16777216.0f);
         };
@@ -203,14 +236,13 @@ bool EmissionIsPointLike(const ParticleEmissionNode& n)
     switch (n.shape)
     {
         case EmitterShapeKind::Circle: return n.radius <= 0.0f;
-        case EmitterShapeKind::Rect:   return n.width <= 0.0f && n.height <= 0.0f;
+        case EmitterShapeKind::Rect: return n.width <= 0.0f && n.height <= 0.0f;
         case EmitterShapeKind::Point:
-        default:                       return true;
+        default: return true;
     }
 }
 
-void DrawEmission(const ParticleEmissionNode& n, const Painter& p,
-                  float x, float y, float w, float h)
+void DrawEmission(const ParticleEmissionNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const float pad = 12.0f * p.dpi;
     const float cx = x + w * 0.5f;
@@ -244,7 +276,10 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p,
                 // Rejection-free: push the square samples onto the disc.
                 const float sx = samples[i].x, sy = samples[i].y;
                 const float len = std::sqrt(sx * sx + sy * sy);
-                if (len > 1.0f || len <= 0.0001f) continue;
+                if (len > 1.0f || len <= 0.0001f)
+                {
+                    continue;
+                }
                 p.Dot(cx + sx * r, cy - sy * r, dotR, Neutral(150));
             }
             // The radius itself, as the measured thing it is.
@@ -256,7 +291,7 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p,
         {
             // Fit the box preserving its aspect, so a wide emitter looks wide -
             // and so one side left at zero draws the line emitter it really is.
-            const float rw = n.width  > 0.0f ? n.width  * 0.5f : 0.0001f;
+            const float rw = n.width > 0.0f ? n.width * 0.5f : 0.0001f;
             const float rh = n.height > 0.0f ? n.height * 0.5f : 0.0001f;
             const float scale = (roomX / rw < roomY / rh) ? (roomX / rw) : (roomY / rh);
             const float hw = rw * scale;
@@ -264,15 +299,16 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p,
             p.FillRect(cx - hw, cy - hh, cx + hw, cy + hh, Ink(26));
             p.Rect(cx - hw, cy - hh, cx + hw, cy + hh, Ink(230), 1.5f);
             for (int i = 0; i < sampleCount; ++i)
+            {
                 p.Dot(cx + samples[i].x * hw, cy - samples[i].y * hh, dotR, Neutral(150));
+            }
             p.Arrow(cx, cy, cx + hw, cy, Warm(220), 1.5f);
             p.Arrow(cx, cy, cx, cy - hh, Warm(220), 1.5f);
             p.Origin(cx, cy);
             return;
         }
         case EmitterShapeKind::Point:
-        default:
-            break;   // point-like, and already drawn above
+        default: break;  // point-like, and already drawn above
     }
 }
 
@@ -280,19 +316,30 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p,
 // Initial Velocity: the arc particles leave along, and how fast.
 // ---------------------------------------------------------------------------
 
-void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
-                         float x, float y, float w, float h)
+void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const float pad = 14.0f * p.dpi;
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
     float R = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
-    if (R < 4.0f) return;
+    if (R < 4.0f)
+    {
+        return;
+    }
 
     float a0 = n.angleMin, a1 = n.angleMax;
-    if (a1 < a0) { const float t = a0; a0 = a1; a1 = t; }
+    if (a1 < a0)
+    {
+        const float t = a0;
+        a0 = a1;
+        a1 = t;
+    }
     const bool full = (a1 - a0) >= kTwoPi - 0.001f;
-    if (full) { a0 = 0.0f; a1 = kTwoPi; }
+    if (full)
+    {
+        a0 = 0.0f;
+        a1 = kTwoPi;
+    }
 
     // Speeds set the ring radii. Sign is direction, not distance, so the rings
     // use magnitude and the arrows point the way the sign says.
@@ -309,9 +356,12 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
         return;
     }
 
-    float rIn  = R * ((m0 < m1 ? m0 : m1) / mMax);
+    float rIn = R * ((m0 < m1 ? m0 : m1) / mMax);
     float rOut = R;
-    if (rIn > rOut) rIn = rOut;
+    if (rIn > rOut)
+    {
+        rIn = rOut;
+    }
 
     // The band of possible speeds, then its edges.
     if (rOut - rIn > 1.0f)
@@ -325,7 +375,9 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
     }
     p.Arc(cx, cy, rOut, a0, a1, Ink(230), 1.5f);
     if (rIn > 1.0f)
+    {
         p.Arc(cx, cy, rIn, a0, a1, Ink(110), 1.0f);
+    }
     if (!full)
     {
         p.Ray(cx, cy, a0, 0.0f, rOut, Ink(120), 1.0f);
@@ -336,15 +388,13 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
     const int arrows = full ? 8 : 5;
     for (int i = 0; i < arrows; ++i)
     {
-        const float t = (arrows == 1) ? 0.5f
-                                      : static_cast<float>(i) / static_cast<float>(arrows - 1);
-        const float a = full ? (a0 + (a1 - a0) * (static_cast<float>(i) / static_cast<float>(arrows)))
-                             : (a0 + (a1 - a0) * t);
+        const float t = (arrows == 1) ? 0.5f : static_cast<float>(i) / static_cast<float>(arrows - 1);
+        const float a =
+            full ? (a0 + (a1 - a0) * (static_cast<float>(i) / static_cast<float>(arrows))) : (a0 + (a1 - a0) * t);
         const float ca = std::cos(a), sa = std::sin(a);
         const float tipR = inward ? rIn : rOut;
         const float tailR = inward ? rOut : rIn;
-        p.Arrow(cx + ca * tailR, cy - sa * tailR,
-                cx + ca * tipR,  cy - sa * tipR, Warm(225), 1.5f);
+        p.Arrow(cx + ca * tailR, cy - sa * tailR, cx + ca * tipR, cy - sa * tipR, Warm(225), 1.5f);
     }
     p.Origin(cx, cy);
 }
@@ -353,14 +403,16 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
 // Initial Rotation: the angles particles are born at, and the spin they carry.
 // ---------------------------------------------------------------------------
 
-void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
-                         float x, float y, float w, float h)
+void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
     const float pad = 14.0f * p.dpi;
     float R = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
-    if (R < 6.0f) return;
+    if (R < 6.0f)
+    {
+        return;
+    }
     const float half = R * 0.52f;
 
     // The two ends of the birth-angle range. Identical values draw one square
@@ -373,9 +425,15 @@ void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
     if (std::fabs(spin) > 0.0001f)
     {
         const float rr = R * 0.94f;
-        float sweep = spin / (2.0f * kTwoPi);          // full range = a full turn
-        if (sweep >  1.0f) sweep =  1.0f;
-        if (sweep < -1.0f) sweep = -1.0f;
+        float sweep = spin / (2.0f * kTwoPi);  // full range = a full turn
+        if (sweep > 1.0f)
+        {
+            sweep = 1.0f;
+        }
+        if (sweep < -1.0f)
+        {
+            sweep = -1.0f;
+        }
         sweep *= kTwoPi * 0.75f;
         const float start = kPi * 0.5f;
         p.Arc(cx, cy, rr, start, start + sweep, Warm(210), 1.5f);
@@ -384,8 +442,7 @@ void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
         const float tangent = aEnd + (sweep > 0.0f ? kPi * 0.5f : -kPi * 0.5f);
         const float ex = cx + std::cos(aEnd) * rr;
         const float ey = cy - std::sin(aEnd) * rr;
-        p.Arrow(ex - std::cos(tangent) * 6.0f * p.dpi, ey + std::sin(tangent) * 6.0f * p.dpi,
-                ex, ey, Warm(210), 1.5f);
+        p.Arrow(ex - std::cos(tangent) * 6.0f * p.dpi, ey + std::sin(tangent) * 6.0f * p.dpi, ex, ey, Warm(210), 1.5f);
     }
 }
 
@@ -393,14 +450,16 @@ void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
 // Gravity: a constant pull, drawn as the fall it produces.
 // ---------------------------------------------------------------------------
 
-void DrawGravity(const ParticleGravityNode& n, const Painter& p,
-                 float x, float y, float w, float h)
+void DrawGravity(const ParticleGravityNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
     const float pad = 14.0f * p.dpi;
     float R = (w * 0.5f - pad < h * 0.5f - pad) ? (w * 0.5f - pad) : (h * 0.5f - pad);
-    if (R < 6.0f) return;
+    if (R < 6.0f)
+    {
+        return;
+    }
 
     // Faint axes, so a sideways pull is visibly sideways.
     p.Line(cx - R, cy, cx + R, cy, Neutral(24), 1.0f);
@@ -417,10 +476,13 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p,
     // Length by magnitude, saturating: 20 m/s^2 is already twice earth, and a
     // gizmo that keeps growing past the band tells you less, not more.
     float t = mag / 20.0f;
-    if (t > 1.0f) t = 1.0f;
+    if (t > 1.0f)
+    {
+        t = 1.0f;
+    }
     const float len = R * (0.25f + 0.75f * t);
-    const float ux =  n.gravityX / mag;
-    const float uy = -n.gravityY / mag;   // domain Y is up, screen Y is down
+    const float ux = n.gravityX / mag;
+    const float uy = -n.gravityY / mag;  // domain Y is up, screen Y is down
 
     // Three ghosts spaced as t^2, which is what constant acceleration does.
     const float startX = cx - ux * len * 0.55f;
@@ -429,8 +491,7 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p,
     {
         const float f = static_cast<float>(i) / 3.0f;
         const float d = len * 1.55f * f * f;
-        p.Dot(startX + ux * d, startY + uy * d, 2.6f * p.dpi,
-              Neutral(static_cast<uint8_t>(60 + 55 * i)));
+        p.Dot(startX + ux * d, startY + uy * d, 2.6f * p.dpi, Neutral(static_cast<uint8_t>(60 + 55 * i)));
     }
     p.Arrow(cx, cy, cx + ux * len, cy + uy * len, Warm(235), 2.0f);
 }
@@ -441,7 +502,7 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p,
 
 struct Plot
 {
-    float x0, y0, x1, y1;   // the plotting rect
+    float x0, y0, x1, y1;  // the plotting rect
     float W() const { return x1 - x0; }
     float H() const { return y1 - y0; }
 };
@@ -467,11 +528,13 @@ void DrawLifeAxis(const Painter& p, const Plot& pl, float baselineY)
 // Drag: speed decaying over the seconds after birth.
 // ---------------------------------------------------------------------------
 
-void DrawDrag(const ParticleDragNode& n, const Painter& p,
-              float x, float y, float w, float h)
+void DrawDrag(const ParticleDragNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const Plot pl = PlotRect(p, x, y, w, h);
-    if (pl.W() < 8.0f || pl.H() < 8.0f) return;
+    if (pl.W() < 8.0f || pl.H() < 8.0f)
+    {
+        return;
+    }
 
     DrawLifeAxis(p, pl, pl.y1);
 
@@ -487,7 +550,9 @@ void DrawDrag(const ParticleDragNode& n, const Painter& p,
         const float py = pl.y1 - pl.H() * v;
         p.FillRect(px, py, px + pl.W() / steps + 1.0f, pl.y1, Ink(22));
         if (i > 0)
+        {
             p.Line(prevX, prevY, px, py, Ink(235), 1.5f);
+        }
         prevX = px;
         prevY = py;
     }
@@ -505,11 +570,13 @@ void DrawDrag(const ParticleDragNode& n, const Painter& p,
 // Size over Lifetime: the taper, with particles drawn along it.
 // ---------------------------------------------------------------------------
 
-void DrawSizeOverLifetime(const ParticleSizeOverLifetimeNode& n, const Painter& p,
-                          float x, float y, float w, float h)
+void DrawSizeOverLifetime(const ParticleSizeOverLifetimeNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const Plot pl = PlotRect(p, x, y, w, h);
-    if (pl.W() < 8.0f || pl.H() < 8.0f) return;
+    if (pl.W() < 8.0f || pl.H() < 8.0f)
+    {
+        return;
+    }
 
     const float midY = (pl.y0 + pl.y1) * 0.5f;
     DrawLifeAxis(p, pl, midY);
@@ -555,14 +622,16 @@ void DrawSizeOverLifetime(const ParticleSizeOverLifetimeNode& n, const Painter& 
 // Color over Lifetime: the ramp, alpha included.
 // ---------------------------------------------------------------------------
 
-void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter& p,
-                           float x, float y, float w, float h)
+void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter& p, float x, float y, float w, float h)
 {
     const float padX = 14.0f * p.dpi;
     const float padY = 12.0f * p.dpi;
     const float x0 = x + padX, x1 = x + w - padX;
     const float y0 = y + padY, y1 = y + h - padY;
-    if (x1 - x0 < 8.0f || y1 - y0 < 6.0f) return;
+    if (x1 - x0 < 8.0f || y1 - y0 < 6.0f)
+    {
+        return;
+    }
 
     // Checkerboard first: a fade to transparent and a fade to black look the
     // same on a flat backing, and telling them apart is the whole point of
@@ -595,11 +664,10 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
     for (int i = 0; i < steps; ++i)
     {
         const float f = (static_cast<float>(i) + 0.5f) / static_cast<float>(steps);
-        p.FillRect(x0 + sw * i, y0, x0 + sw * (i + 1) + 1.0f, y1,
-                   DekiNodeGraph::NodeGraphPreviewRgba(static_cast<uint8_t>(r0 + dr * f),
-                                        static_cast<uint8_t>(g0 + dg * f),
-                                        static_cast<uint8_t>(b0 + db * f),
-                                        static_cast<uint8_t>(a0 + da * f)));
+        p.FillRect(
+            x0 + sw * i, y0, x0 + sw * (i + 1) + 1.0f, y1,
+            DekiNodeGraph::NodeGraphPreviewRgba(static_cast<uint8_t>(r0 + dr * f), static_cast<uint8_t>(g0 + dg * f),
+                                                static_cast<uint8_t>(b0 + db * f), static_cast<uint8_t>(a0 + da * f)));
     }
     p.Rect(x0, y0, x1, y1, Neutral(40), 1.0f);
 }
@@ -608,11 +676,14 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
 // Rotation over Lifetime: the spin-rate ramp, and the turning it adds up to.
 // ---------------------------------------------------------------------------
 
-void DrawRotationOverLifetime(const ParticleRotationOverLifetimeNode& n, const Painter& p,
-                              float x, float y, float w, float h)
+void DrawRotationOverLifetime(const ParticleRotationOverLifetimeNode& n, const Painter& p, float x, float y, float w,
+                              float h)
 {
     const Plot pl = PlotRect(p, x, y, w, h);
-    if (pl.W() < 8.0f || pl.H() < 8.0f) return;
+    if (pl.W() < 8.0f || pl.H() < 8.0f)
+    {
+        return;
+    }
 
     const float midY = (pl.y0 + pl.y1) * 0.5f;
     DrawLifeAxis(p, pl, midY);
@@ -644,10 +715,8 @@ void DrawRotationOverLifetime(const ParticleRotationOverLifetimeNode& n, const P
     for (int i = 0; i <= 3; ++i)
     {
         const float f = static_cast<float>(i) / 3.0f;
-        const float theta = n.spinSpeedAt0 * f +
-                            (n.spinSpeedAt1 - n.spinSpeedAt0) * f * f * 0.5f;
-        p.ParticleSquare(pl.x0 + pl.W() * f, midY, squareHalf, theta,
-                         Warm(static_cast<uint8_t>(120 + 35 * i)), 1.5f);
+        const float theta = n.spinSpeedAt0 * f + (n.spinSpeedAt1 - n.spinSpeedAt0) * f * f * 0.5f;
+        p.ParticleSquare(pl.x0 + pl.W() * f, midY, squareHalf, theta, Warm(static_cast<uint8_t>(120 + 35 * i)), 1.5f);
     }
 }
 
@@ -655,71 +724,110 @@ void DrawRotationOverLifetime(const ParticleRotationOverLifetimeNode& n, const P
 // Dispatch
 // ---------------------------------------------------------------------------
 
-constexpr uint32_t kEmissionId  = Deki::HashString(ParticleEmissionNode::StaticNodeName);
-constexpr uint32_t kVelocityId  = Deki::HashString(ParticleInitialVelocityNode::StaticNodeName);
-constexpr uint32_t kRotationId  = Deki::HashString(ParticleInitialRotationNode::StaticNodeName);
-constexpr uint32_t kGravityId   = Deki::HashString(ParticleGravityNode::StaticNodeName);
-constexpr uint32_t kDragId      = Deki::HashString(ParticleDragNode::StaticNodeName);
-constexpr uint32_t kSizeId      = Deki::HashString(ParticleSizeOverLifetimeNode::StaticNodeName);
-constexpr uint32_t kColorId     = Deki::HashString(ParticleColorOverLifetimeNode::StaticNodeName);
-constexpr uint32_t kSpinId      = Deki::HashString(ParticleRotationOverLifetimeNode::StaticNodeName);
+constexpr uint32_t kEmissionId = Deki::HashString(ParticleEmissionNode::StaticNodeName);
+constexpr uint32_t kVelocityId = Deki::HashString(ParticleInitialVelocityNode::StaticNodeName);
+constexpr uint32_t kRotationId = Deki::HashString(ParticleInitialRotationNode::StaticNodeName);
+constexpr uint32_t kGravityId = Deki::HashString(ParticleGravityNode::StaticNodeName);
+constexpr uint32_t kDragId = Deki::HashString(ParticleDragNode::StaticNodeName);
+constexpr uint32_t kSizeId = Deki::HashString(ParticleSizeOverLifetimeNode::StaticNodeName);
+constexpr uint32_t kColorId = Deki::HashString(ParticleColorOverLifetimeNode::StaticNodeName);
+constexpr uint32_t kSpinId = Deki::HashString(ParticleRotationOverLifetimeNode::StaticNodeName);
 
 float GizmoHeight(uint32_t typeId, const void* instance)
 {
     if (!instance)
+    {
         return 0.0f;
+    }
     if (typeId == kEmissionId)
     {
         // A dot does not need the room a shape does; the band shrinks with it
         // rather than framing one mark in a lot of empty plate.
-        return EmissionIsPointLike(*static_cast<const ParticleEmissionNode*>(instance))
-             ? 76.0f : 132.0f;
+        return EmissionIsPointLike(*static_cast<const ParticleEmissionNode*>(instance)) ? 76.0f : 132.0f;
     }
-    if (typeId == kVelocityId) return 132.0f;
-    if (typeId == kRotationId) return 104.0f;
-    if (typeId == kGravityId)  return 112.0f;
-    if (typeId == kDragId)     return 88.0f;
-    if (typeId == kSizeId)     return 92.0f;
-    if (typeId == kColorId)    return 56.0f;
-    if (typeId == kSpinId)     return 92.0f;
-    return 0.0f;   // Emitter, and any node a picture would not help.
+    if (typeId == kVelocityId)
+    {
+        return 132.0f;
+    }
+    if (typeId == kRotationId)
+    {
+        return 104.0f;
+    }
+    if (typeId == kGravityId)
+    {
+        return 112.0f;
+    }
+    if (typeId == kDragId)
+    {
+        return 88.0f;
+    }
+    if (typeId == kSizeId)
+    {
+        return 92.0f;
+    }
+    if (typeId == kColorId)
+    {
+        return 56.0f;
+    }
+    if (typeId == kSpinId)
+    {
+        return 92.0f;
+    }
+    return 0.0f;  // Emitter, and any node a picture would not help.
 }
 
-void GizmoDraw(uint32_t typeId, const void* instance,
-               float x, float y, float w, float h, float dpi,
+void GizmoDraw(uint32_t typeId, const void* instance, float x, float y, float w, float h, float dpi,
                const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
 {
     if (!instance || !canvas.line || !canvas.circleFilled || !canvas.rectFilled)
+    {
         return;
+    }
 
     const Painter p{ canvas, dpi > 0.0f ? dpi : 1.0f };
 
     if (typeId == kEmissionId)
+    {
         DrawEmission(*static_cast<const ParticleEmissionNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kVelocityId)
+    {
         DrawInitialVelocity(*static_cast<const ParticleInitialVelocityNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kRotationId)
+    {
         DrawInitialRotation(*static_cast<const ParticleInitialRotationNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kGravityId)
+    {
         DrawGravity(*static_cast<const ParticleGravityNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kDragId)
+    {
         DrawDrag(*static_cast<const ParticleDragNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kSizeId)
+    {
         DrawSizeOverLifetime(*static_cast<const ParticleSizeOverLifetimeNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kColorId)
+    {
         DrawColorOverLifetime(*static_cast<const ParticleColorOverLifetimeNode*>(instance), p, x, y, w, h);
+    }
     else if (typeId == kSpinId)
+    {
         DrawRotationOverLifetime(*static_cast<const ParticleRotationOverLifetimeNode*>(instance), p, x, y, w, h);
+    }
 }
 
-} // namespace
+}  // namespace
 
 DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticles_GizmoOps()
 {
     DekiNodeGraph::NodeGraphNodeGizmoOps ops;
     ops.height = &GizmoHeight;
-    ops.draw   = &GizmoDraw;
+    ops.draw = &GizmoDraw;
     return ops;
 }
 
-#endif // DEKI_EDITOR
+#endif  // DEKI_EDITOR

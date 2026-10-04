@@ -33,7 +33,10 @@ namespace
 class FailAfterProvider : public Deki::IMemoryProvider
 {
 public:
-    explicit FailAfterProvider(int allowed) : m_Allowed(allowed) {}
+    explicit FailAfterProvider(int allowed)
+        : m_Allowed(allowed)
+    {
+    }
 
     bool Initialize() override { return true; }
     void Shutdown() override {}
@@ -50,7 +53,9 @@ public:
     {
         (void)needsDma;
         if (!Serves(region) || m_Allowed <= 0)
+        {
             return nullptr;
+        }
         --m_Allowed;
         return malloc(bytes);
     }
@@ -71,10 +76,7 @@ private:
 // uses, so a block allocated under it can be freed after it is gone.
 struct ScopedFailingAllocator
 {
-    explicit ScopedFailingAllocator(int allowed)
-    {
-        Deki::Memory::SetBackend(new FailAfterProvider(allowed));
-    }
+    explicit ScopedFailingAllocator(int allowed) { Deki::Memory::SetBackend(new FailAfterProvider(allowed)); }
     ~ScopedFailingAllocator() { Deki::Memory::SetBackend(nullptr); }
 };
 
@@ -132,7 +134,7 @@ TEST(ParticlePool, ZeroAndNegativeCapacityAllocateNothing)
 
     pool.SetCapacity(-5);
     EXPECT_FALSE(static_cast<bool>(pool.posX));
-    EXPECT_EQ(pool.Spawn(), -1);      // and nothing can be spawned into it
+    EXPECT_EQ(pool.Spawn(), -1);  // and nothing can be spawned into it
 }
 
 TEST(ParticlePool, SameCapacityDoesNotChurnTheMemory)
@@ -191,7 +193,7 @@ TEST(ParticlePool, SpawnHandsOutDenseIndicesThenRefuses)
     EXPECT_EQ(pool.Spawn(), 0);
     EXPECT_EQ(pool.Spawn(), 1);
     EXPECT_EQ(pool.Spawn(), 2);
-    EXPECT_EQ(pool.Spawn(), -1);      // full, not a wrap or an overrun
+    EXPECT_EQ(pool.Spawn(), -1);  // full, not a wrap or an overrun
     EXPECT_EQ(pool.AliveCount(), 3);
 }
 
@@ -208,9 +210,9 @@ TEST(ParticlePool, KillSwapMovesTheLastAliveIntoTheHole)
 
     EXPECT_EQ(pool.KillSwap(1), 1);
     EXPECT_EQ(pool.AliveCount(), 3);
-    EXPECT_FLOAT_EQ(pool.posX[1], 3.0f);        // index 3 moved down
-    EXPECT_FLOAT_EQ(pool.lifetime[1], 13.0f);   // every column, not just posX
-    EXPECT_FLOAT_EQ(pool.posX[0], 0.0f);        // the others are untouched
+    EXPECT_FLOAT_EQ(pool.posX[1], 3.0f);       // index 3 moved down
+    EXPECT_FLOAT_EQ(pool.lifetime[1], 13.0f);  // every column, not just posX
+    EXPECT_FLOAT_EQ(pool.posX[0], 0.0f);       // the others are untouched
     EXPECT_FLOAT_EQ(pool.posX[2], 2.0f);
 }
 
@@ -233,10 +235,10 @@ TEST(ParticlePool, KillSwapRejectsIndicesOutsideTheAliveRange)
     pool.SetCapacity(4);
     ASSERT_EQ(pool.Spawn(), 0);
 
-    EXPECT_EQ(pool.KillSwap(1), -1);   // allocated but not alive
+    EXPECT_EQ(pool.KillSwap(1), -1);  // allocated but not alive
     EXPECT_EQ(pool.KillSwap(-1), -1);
     EXPECT_EQ(pool.KillSwap(99), -1);
-    EXPECT_EQ(pool.AliveCount(), 1);   // and none of them killed anything
+    EXPECT_EQ(pool.AliveCount(), 1);  // and none of them killed anything
 }
 
 TEST(ParticlePool, KillSwapCarriesTheOptionalColumnsToo)
@@ -250,7 +252,10 @@ TEST(ParticlePool, KillSwapCarriesTheOptionalColumnsToo)
     ASSERT_TRUE(pool.HasScale());
     ASSERT_TRUE(pool.HasTint());
 
-    for (int i = 0; i < 3; ++i) ASSERT_EQ(pool.Spawn(), i);
+    for (int i = 0; i < 3; ++i)
+    {
+        ASSERT_EQ(pool.Spawn(), i);
+    }
     pool.rotation[2] = 1.5f;
     pool.rotationSpeed[2] = 2.5f;
     pool.scale[2] = 3.5f;
@@ -279,7 +284,9 @@ TEST(ParticlePool, EnsureRotationAllocatesBothColumnsOfThePair)
     EXPECT_EQ(pool.rotation.Count(), 8u);
     EXPECT_EQ(pool.rotationSpeed.Count(), 8u);
     for (int i = 0; i < 8; ++i)
+    {
         EXPECT_FLOAT_EQ(pool.rotation[i], 0.0f) << i;
+    }
 }
 
 TEST(ParticlePool, EnsureScaleStartsAtOneNotZero)
@@ -291,7 +298,9 @@ TEST(ParticlePool, EnsureScaleStartsAtOneNotZero)
     pool.EnsureScale();
     ASSERT_TRUE(pool.HasScale());
     for (int i = 0; i < 8; ++i)
+    {
         EXPECT_FLOAT_EQ(pool.scale[i], 1.0f) << i;
+    }
 }
 
 TEST(ParticlePool, EnsureTintStartsOpaqueWhite)
@@ -355,7 +364,7 @@ TEST(ParticlePool, OutOfMemoryLeavesThePoolEmptyRatherThanPartial)
     EXPECT_FALSE(static_cast<bool>(pool.velY));
     EXPECT_FALSE(static_cast<bool>(pool.age));
     EXPECT_FALSE(static_cast<bool>(pool.lifetime));
-    EXPECT_EQ(pool.Spawn(), -1);   // nothing can be spawned into an empty pool
+    EXPECT_EQ(pool.Spawn(), -1);  // nothing can be spawned into an empty pool
 }
 
 TEST(ParticlePool, AnOptionalPairStaysDisabledWhenOnlyHalfOfItFits)
@@ -441,16 +450,19 @@ public:
 
     void* Allocate(Deki::Memory::Region region, size_t bytes, bool) override
     {
-        if (!Serves(region)) return nullptr;
-        if (region == kScratch) ++scratchCalls;
+        if (!Serves(region))
+        {
+            return nullptr;
+        }
+        if (region == kScratch)
+        {
+            ++scratchCalls;
+        }
         return malloc(bytes);
     }
 
     void Free(Deki::Memory::Region, void* ptr) override { free(ptr); }
-    size_t GetAvailable(Deki::Memory::Region region) const override
-    {
-        return Serves(region) ? 64 * 1024 : 0;
-    }
+    size_t GetAvailable(Deki::Memory::Region region) const override { return Serves(region) ? 64 * 1024 : 0; }
 
     int scratchCalls = 0;
 };

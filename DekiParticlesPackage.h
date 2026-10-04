@@ -26,4 +26,4 @@
 #include "ParticleModifierRegistry.h"
 #include "ParticleSystem.h"
 
-#endif // DEKI_PACKAGE_PARTICLES
+#endif  // DEKI_PACKAGE_PARTICLES

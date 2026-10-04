@@ -26,9 +26,9 @@ namespace DekiEditor
 class ParticleGraphAssetEditor : public AssetTypeEditor
 {
 public:
-    const char* GetTypeName() const override    { return "ParticleGraph"; }
+    const char* GetTypeName() const override { return "ParticleGraph"; }
     const char* GetDisplayName() const override { return "Particle Effect"; }
-    const char* GetExtension() const override   { return ".asset"; }
+    const char* GetExtension() const override { return ".asset"; }
 
     // A new effect starts as the permanent Emitter node wired to an Emission
     // node, which is the smallest graph that actually produces particles. An
@@ -53,7 +53,7 @@ public:
 
 REGISTER_EDITOR(ParticleGraphAssetEditor)
 
-} // namespace DekiEditor
+}  // namespace DekiEditor
 
 // Implemented in ParticlePreview.cpp: runs the graph being edited and draws
 // its particles, so the Node Graph window can offer a Preview panel.
@@ -63,11 +63,8 @@ DekiNodeGraph::NodeGraphPreviewOps DekiParticles_PreviewOps();
 // or ramp in the properties panel, under its title.
 DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticles_GizmoOps();
 
-REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(g_ParticleDomain,
-                                          "ParticleGraph", "Particle Effect",
-                                          "Particles", "ParticleEmit",
-                                          DekiParticles_PreviewOps(),
-                                          DekiParticles_GizmoOps());
+REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(g_ParticleDomain, "ParticleGraph", "Particle Effect", "Particles",
+                                          "ParticleEmit", DekiParticles_PreviewOps(), DekiParticles_GizmoOps());
 
 // Re-registration hook for plugin-only hot reload: the editor wipes the domain
 // registry while this DLL stays loaded, so the static registrar above never
@@ -82,4 +79,4 @@ extern "C" void DekiParticles_RegisterEditorGraphDomain(void)
     DekiNodeGraph::NodeGraphDomainRegistry::Instance().Register(&g_ParticleDomain);
 }
 
-#endif // DEKI_EDITOR
+#endif  // DEKI_EDITOR

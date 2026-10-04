@@ -53,19 +53,21 @@ DEKI_FORMER_NAME("ParticleEmitterComponent")
 class DEKI_PARTICLES_API ParticleEmitterComponent : public DekiRendering::RendererComponent
 {
 public:
-
     DEKI_EXPORT
-    DEKI_TOOLTIP("Image drawn for each particle. A small, soft sprite hides the low particle counts a device can afford.")
+    DEKI_TOOLTIP(
+        "Image drawn for each particle. A small, soft sprite hides the low particle counts a device can afford.")
     Deki::AssetRef<Deki2D::Sprite> sprite;
 
     // The effect recipe. Assign a ".asset" of type "ParticleGraph", authored
     // in the Node Graph window. No graph means no chain and no particles.
     DEKI_EXPORT
-    DEKI_TOOLTIP("The particle graph asset, which is where emission, velocity, size and colour over lifetime are authored.")
+    DEKI_TOOLTIP(
+        "The particle graph asset, which is where emission, velocity, size and colour over lifetime are authored.")
     Deki::AssetRef<ParticleGraph> graph;
 
     DEKI_EXPORT
-    DEKI_TOOLTIP("Ceiling on particles alive at once. The pool is allocated once at this size, so it is a memory decision as much as a visual one.")
+    DEKI_TOOLTIP("Ceiling on particles alive at once. The pool is allocated once at this size, so it is a memory "
+                 "decision as much as a visual one.")
     DEKI_RANGE(0, 4096)
     int32_t maxParticles = 64;
 
@@ -78,7 +80,8 @@ public:
     bool looping = true;
 
     DEKI_EXPORT
-    DEKI_TOOLTIP("Leave particles where they were born when the emitter moves. Off, they travel with it, which suits a flame carried by a character and not smoke left behind one.")
+    DEKI_TOOLTIP("Leave particles where they were born when the emitter moves. Off, they travel with it, which suits a "
+                 "flame carried by a character and not smoke left behind one.")
     bool worldSpace = true;
 
     ParticleEmitterComponent();
@@ -91,19 +94,13 @@ public:
 
     bool GetContentExtents(float& outWidth, float& outHeight) const override;
 
-    bool RenderContent(const Deki::Object* owner,
-                       QuadBlit::Source& outSource,
-                       float& outPivotX,
-                       float& outPivotY,
-                       uint8_t& outTintR,
-                       uint8_t& outTintG,
-                       uint8_t& outTintB,
-                       uint8_t& outTintA) override;
+    bool RenderContent(const Deki::Object* owner, QuadBlit::Source& outSource, float& outPivotX, float& outPivotY,
+                       uint8_t& outTintR, uint8_t& outTintG, uint8_t& outTintB, uint8_t& outTintA) override;
 
     // Public so modifiers can read/write directly. Hot-path inner loops touch
     // these without going through accessors.
     DekiParticles::ParticlePool pool;
-    DekiParticles::Xorshift32   rng;
+    DekiParticles::Xorshift32 rng;
 
     // Walk the graph asset into m_Chain (see ParticleChain.h). Called by
     // EnsureReady; call it directly after assigning a different graph asset.
@@ -123,7 +120,7 @@ public:
     // Calls OnEmit on every modifier in phase order (including the modifier
     // that called Spawn — modifiers above its phase will not see this
     // particle until next frame, which is intentional and consistent).
-    int  Spawn();
+    int Spawn();
 
     // Single tick of simulation: age, kill, dispatch modifiers, integrate.
     // Update() calls this with the engine's frame delta. The editor preview
@@ -156,7 +153,7 @@ private:
 
     // Render-side persistent buffer (grows to fit, never shrinks for jitter).
     uint8_t* m_BboxBuf = nullptr;
-    int      m_BboxBufBytes = 0;
+    int m_BboxBufBytes = 0;
 
     // The built chain, in wire order.
     std::vector<ParticleChainEntry> m_Chain;
