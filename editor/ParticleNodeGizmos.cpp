@@ -1,30 +1,24 @@
-/**
- * @file ParticleNodeGizmos.cpp
- * @brief Pictures of particle nodes, drawn in the Node Graph properties panel.
- *
- * "radius 0.4, angle 0 to 6.28" is a fact about a node, not a picture of it.
- * These draw what each node MEANS: the shape particles spawn in, the arc they
- * leave along, the ramp a size follows, the ramp a color fades down. The band
- * sits between the node's title and its fields and redraws every frame from
- * the live instance, so it answers a slider while the slider is being dragged.
- *
- * Two rules shape everything here:
- *
- *  - PROPORTION, NOT MEASURE. A gizmo auto-fits its band, so a 0.2 m circle and
- *    a 5 m circle are drawn the same size. What it shows is the SHAPE and the
- *    relationships between values (this edge twice that one, this arc a third
- *    of the way round, this size doubling as it ages); the numeric value is in
- *    the row directly underneath and needs no second copy. True-to-scale
- *    belongs in the live preview, which has a px/m slider and draws the
- *    emitter's shape at the same scale as the particles leaving it.
- *
- *  - EVERY CURVE IS A POLYLINE. NodeGraphPreviewCanvas offers a filled circle,
- *    a filled rect and a line, and that is deliberately all: a provider lives
- *    in another DLL and draws through function pointers, so the primitive set
- *    is a compatibility surface and not a place to add a shape whenever one is
- *    convenient. Arcs, rings, outlines and gradients here are built from those
- *    three.
- */
+// Pictures of particle nodes, drawn in the Node Graph properties panel.
+//
+// Each picture shows what a node means: the shape particles spawn in, the arc
+// they leave along, the ramp a size follows, the ramp a colour fades down. The
+// band sits between the node's title and its fields and is redrawn every frame
+// from the live instance, so it follows a slider while it is dragged.
+//
+// Two rules:
+//
+//  - Proportion, not measure. A gizmo fits its band, so a 0.2 m circle and a
+//    5 m circle are drawn the same size. It shows the shape and how values
+//    relate (this edge twice that one, this arc a third of the way round, this
+//    size doubling as it ages); the number is in the row underneath. True
+//    scale belongs in the live preview, which has a px/m slider and draws the
+//    emitter's shape at the same scale as its particles.
+//
+//  - Every curve is a polyline. NodeGraphPreviewCanvas offers a filled circle,
+//    a filled rect and a line, and only those on purpose: a provider lives in
+//    another DLL and draws through function pointers, so the primitive set is
+//    a compatibility surface, not a place to add shapes as convenient. Arcs,
+//    rings, outlines and gradients here are built from those three.
 
 #ifdef DEKI_EDITOR
 
@@ -46,8 +40,8 @@ constexpr float kTwoPi = Deki::Math::kTwoPi;
 
 // ---------------------------------------------------------------------------
 // Palette. Local on purpose: a package must not reach into the editor's theme
-// for drawing it does through the canvas ops, and these read against the dark
-// recessed band the window puts behind a gizmo.
+// for drawing it does through the canvas ops, and these colours are chosen for
+// the dark band the window puts behind a gizmo.
 // ---------------------------------------------------------------------------
 
 inline uint32_t Ink(uint8_t a)
@@ -64,11 +58,11 @@ inline uint32_t Neutral(uint8_t a)
 }  // axes, particles
 
 // ---------------------------------------------------------------------------
-// Drawing helpers over the three primitives.
+// Drawing helpers built on the three primitives.
 // ---------------------------------------------------------------------------
 
-// Angles follow the domain's convention (0 = +X, counter-clockwise, +Y up), so
-// every conversion to screen flips Y in one place: here.
+// Angles follow the domain's convention (0 = +X, counter-clockwise, +Y up);
+// this is the one place that flips Y for the screen.
 struct Painter
 {
     const DekiNodeGraph::NodeGraphPreviewCanvas& c;
@@ -97,8 +91,8 @@ struct Painter
         Line(x0, y1, x0, y0, col, th);
     }
 
-    // Segment count from the radius: a 4 px ring needs nothing like the 40
-    // pieces a 60 px one does, and a fixed count is either coarse or wasteful.
+    // Segment count from the radius: a 4 px ring needs far fewer pieces than a
+    // 60 px one, and a fixed count is either coarse or wasteful.
     int SegmentsFor(float r, float sweep) const
     {
         int n = static_cast<int>(r * std::fabs(sweep) * 0.25f);
@@ -137,7 +131,7 @@ struct Painter
         Arc(cx, cy, r, 0.0f, kTwoPi, col, th);
     }
 
-    // Ray from (cx,cy) at a domain angle.
+    // Ray from (cx, cy) at a domain angle.
     void Ray(float cx, float cy, float a, float r0, float r1, uint32_t col, float th = 1.0f) const
     {
         const float ca = std::cos(a), sa = std::sin(a);
@@ -165,7 +159,7 @@ struct Painter
     }
 
     // The emitter origin: a small cross, the same mark in every gizmo that has
-    // one, so "this is where the effect is" never has to be worked out.
+    // one, so where the effect is is always obvious.
     void Origin(float cx, float cy) const
     {
         const float k = 4.0f * dpi;
@@ -193,9 +187,9 @@ struct Painter
     }
 };
 
-// Stable scatter for "particles spawn in here". Fixed at first use rather than
-// re-rolled per frame: dots that crawl while a radius is dragged read as the
-// effect doing something, which is exactly what a gizmo must not invent.
+// Stable scatter for "particles spawn in here", fixed at first use rather than
+// re-rolled each frame: dots that crawl while a radius is dragged would look
+// like the effect doing something it does not.
 struct Sample
 {
     float x, y;
@@ -230,7 +224,7 @@ const Sample* UnitSamples(int& count)
 
 // True when an Emission node has no extent to draw: a Point shape, or one of
 // the sized shapes left at zero, which spawns from a single spot just the same.
-// Both the drawing and the band's height ask this, so it is asked in one place.
+// Both the drawing and the band's height use this, so it is decided in one place.
 bool EmissionIsPointLike(const ParticleEmissionNode& n)
 {
     switch (n.shape)
@@ -252,8 +246,8 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p, float x, floa
 
     if (EmissionIsPointLike(n))
     {
-        // Every particle starts at one place. Rings pulsing outward would be a
-        // lie about direction, so this is just the spot, marked.
+        // Every particle starts at one place. Rings pulsing outward would
+        // suggest a direction, so this just marks the spot.
         p.Ring(cx, cy, 9.0f * p.dpi, Ink(70), 1.0f);
         p.Dot(cx, cy, 3.5f * p.dpi, Ink(235));
         p.Origin(cx, cy);
@@ -273,7 +267,7 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p, float x, floa
             p.Ring(cx, cy, r, Ink(230), 1.5f);
             for (int i = 0; i < sampleCount; ++i)
             {
-                // Rejection-free: push the square samples onto the disc.
+                // No rejection sampling: map the square samples onto the disc.
                 const float sx = samples[i].x, sy = samples[i].y;
                 const float len = std::sqrt(sx * sx + sy * sy);
                 if (len > 1.0f || len <= 0.0001f)
@@ -282,15 +276,15 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p, float x, floa
                 }
                 p.Dot(cx + sx * r, cy - sy * r, dotR, Neutral(150));
             }
-            // The radius itself, as the measured thing it is.
+            // The radius itself.
             p.Arrow(cx, cy, cx + r, cy, Warm(220), 1.5f);
             p.Origin(cx, cy);
             return;
         }
         case EmitterShapeKind::Rect:
         {
-            // Fit the box preserving its aspect, so a wide emitter looks wide -
-            // and so one side left at zero draws the line emitter it really is.
+            // Fit the box keeping its aspect, so a wide emitter looks wide and
+            // one with a side at zero draws as the line it is.
             const float rw = n.width > 0.0f ? n.width * 0.5f : 0.0001f;
             const float rh = n.height > 0.0f ? n.height * 0.5f : 0.0001f;
             const float scale = (roomX / rw < roomY / rh) ? (roomX / rw) : (roomY / rh);
@@ -308,7 +302,7 @@ void DrawEmission(const ParticleEmissionNode& n, const Painter& p, float x, floa
             return;
         }
         case EmitterShapeKind::Point:
-        default: break;  // point-like, and already drawn above
+        default: break;  // point-like, already drawn above
     }
 }
 
@@ -341,15 +335,15 @@ void DrawInitialVelocity(const ParticleInitialVelocityNode& n, const Painter& p,
         a1 = kTwoPi;
     }
 
-    // Speeds set the ring radii. Sign is direction, not distance, so the rings
-    // use magnitude and the arrows point the way the sign says.
+    // Speeds set the ring radii. The sign is a direction, not a distance, so
+    // the rings use the magnitude and the arrows point the way the sign says.
     const float m0 = std::fabs(n.speedMin), m1 = std::fabs(n.speedMax);
     const float mMax = (m0 > m1 ? m0 : m1);
     const bool inward = (n.speedMin + n.speedMax) < 0.0f;
 
     if (mMax <= 0.0001f)
     {
-        // No speed: particles stay where they are born. Say that plainly.
+        // No speed: particles stay where they are born. Show that plainly.
         p.Ring(cx, cy, r * 0.25f, Ink(50), 1.0f);
         p.Dot(cx, cy, 3.5f * p.dpi, Ink(200));
         p.Origin(cx, cy);
@@ -415,8 +409,8 @@ void DrawInitialRotation(const ParticleInitialRotationNode& n, const Painter& p,
     }
     const float half = r * 0.52f;
 
-    // The two ends of the birth-angle range. Identical values draw one square
-    // over the other, which is the honest picture of "every particle the same".
+    // The two ends of the birth-angle range. Equal values draw one square over
+    // the other, which correctly shows "every particle the same".
     p.ParticleSquare(cx, cy, half, n.rotationMin, Neutral(80), 1.0f);
     p.ParticleSquare(cx, cy, half, n.rotationMax, Ink(235), 1.5f);
 
@@ -473,8 +467,8 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p, float x, float 
         return;
     }
 
-    // Length by magnitude, saturating: 20 m/s^2 is already twice earth, and a
-    // gizmo that keeps growing past the band tells you less, not more.
+    // Length by magnitude, capped: 20 m/s^2 is already twice Earth's, and an
+    // arrow that grows past the band tells you less, not more.
     float t = mag / 20.0f;
     if (t > 1.0f)
     {
@@ -484,7 +478,7 @@ void DrawGravity(const ParticleGravityNode& n, const Painter& p, float x, float 
     const float ux = n.gravityX / mag;
     const float uy = -n.gravityY / mag;  // domain Y is up, screen Y is down
 
-    // Three ghosts spaced as t^2, which is what constant acceleration does.
+    // Three ghosts spaced as t^2, as constant acceleration spaces them.
     const float startX = cx - ux * len * 0.55f;
     const float startY = cy - uy * len * 0.55f;
     for (int i = 1; i <= 3; ++i)
@@ -514,8 +508,8 @@ Plot PlotRect(const Painter& p, float x, float y, float w, float h)
     return Plot{ x + padX, y + padY, x + w - padX, y + h - padY };
 }
 
-// The life axis every one of these shares: birth at the left, death at the
-// right, with the ends ticked so the direction is not a guess.
+// The life axis they all share: birth at the left, death at the right, with
+// the ends ticked so the direction is clear.
 void DrawLifeAxis(const Painter& p, const Plot& pl, float baselineY)
 {
     p.Line(pl.x0, baselineY, pl.x1, baselineY, Neutral(34), 1.0f);
@@ -538,8 +532,8 @@ void DrawDrag(const ParticleDragNode& n, const Painter& p, float x, float y, flo
 
     DrawLifeAxis(p, pl, pl.y1);
 
-    // Two seconds of it: long enough that a drag of 1 has visibly bled off,
-    // short enough that a drag of 8 is not a vertical wall against the axis.
+    // Two seconds: long enough that a drag of 1 visibly slows things, short
+    // enough that a drag of 8 is not a vertical wall against the axis.
     const int steps = 48;
     float prevX = pl.x0, prevY = pl.y0;
     for (int i = 0; i <= steps; ++i)
@@ -557,7 +551,7 @@ void DrawDrag(const ParticleDragNode& n, const Painter& p, float x, float y, flo
         prevY = py;
     }
 
-    // Ghost particles at equal times: the bunching IS the slowing down.
+    // Ghost particles at equal times: their bunching shows the slowing.
     for (int i = 1; i <= 4; ++i)
     {
         const float f = static_cast<float>(i) / 4.0f;
@@ -584,7 +578,7 @@ void DrawSizeOverLifetime(const ParticleSizeOverLifetimeNode& n, const Painter& 
     float sMax = (n.sizeAt0 > n.sizeAt1 ? n.sizeAt0 : n.sizeAt1);
     if (sMax <= 0.0001f)
     {
-        // Zero at both ends: nothing is ever drawn. Show the axis and stop.
+        // Zero at both ends: nothing is ever drawn. Show the axis only.
         p.Dot(pl.x0, midY, 2.0f * p.dpi, Ink(160));
         p.Dot(pl.x1, midY, 2.0f * p.dpi, Ink(160));
         return;
@@ -633,9 +627,8 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
         return;
     }
 
-    // Checkerboard first: a fade to transparent and a fade to black look the
-    // same on a flat backing, and telling them apart is the whole point of
-    // having alpha in this node.
+    // Checkerboard first: on a flat backing a fade to transparent looks like a
+    // fade to black, and telling them apart is why this node has alpha.
     const float sq = 6.0f * p.dpi;
     int row = 0;
     for (float cy = y0; cy < y1; cy += sq, ++row)
@@ -651,9 +644,9 @@ void DrawColorOverLifetime(const ParticleColorOverLifetimeNode& n, const Painter
         }
     }
 
-    // Lerped by hand rather than through Color::Lerp: the same channel-wise
-    // blend the runtime modifier does, and it keeps this file from depending on
-    // an engine symbol being exported to package DLLs.
+    // Lerped by hand rather than with Color::Lerp: it is the same per-channel
+    // blend the runtime modifier does, and it keeps this file from depending
+    // on an engine symbol being exported to package DLLs.
     const int steps = 64;
     const float sw = (x1 - x0) / static_cast<float>(steps);
     const int r0 = n.colorAt0.r, g0 = n.colorAt0.g, b0 = n.colorAt0.b, a0 = n.colorAt0.a;
@@ -708,7 +701,7 @@ void DrawRotationOverLifetime(const ParticleRotationOverLifetimeNode& n, const P
         }
     }
 
-    // What that rate ADDS UP TO over one second of life: the integral of the
+    // What that rate adds up to over one second of life: the integral of the
     // ramp. A rate plot alone never shows that a small rate held for a whole
     // life is still half a turn.
     const float squareHalf = 5.0f * p.dpi;
@@ -741,8 +734,8 @@ float GizmoHeight(uint32_t typeId, const void* instance)
     }
     if (typeId == kEmissionId)
     {
-        // A dot does not need the room a shape does; the band shrinks with it
-        // rather than framing one mark in a lot of empty plate.
+        // A dot needs less room than a shape, so the band shrinks rather than
+        // frame one mark in a lot of empty space.
         return EmissionIsPointLike(*static_cast<const ParticleEmissionNode*>(instance)) ? 76.0f : 132.0f;
     }
     if (typeId == kVelocityId)
@@ -773,7 +766,7 @@ float GizmoHeight(uint32_t typeId, const void* instance)
     {
         return 92.0f;
     }
-    return 0.0f;  // Emitter, and any node a picture would not help.
+    return 0.0f;  // the Emitter, and any node a picture would not help
 }
 
 void GizmoDraw(uint32_t typeId, const void* instance, float x, float y, float w, float h, float dpi,

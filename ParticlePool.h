@@ -9,21 +9,21 @@
 namespace DekiParticles
 {
 
-/**
- * @brief Struct-of-arrays particle storage with lazy optional columns.
- *
- * Always-present columns (allocated when capacity is set):
- *   posX, posY, velX, velY, age, lifetime
- *
- * Optional shared columns (allocated on first use via Ensure*):
- *   rotation, rotationSpeed, scale, tintR, tintG, tintB, tintA
- *
- * Modifiers needing private per-particle data should allocate it in their
- * onAttach, out of the per-emitter state blob — keeping pool extension
- * reserved for shared state read by the render path.
- *
- * Death uses swap-with-last-alive: O(1), keeps [0, aliveCount) dense.
- */
+/// Struct-of-arrays particle storage, with optional columns allocated on
+/// demand.
+///
+/// Columns always present (allocated when the capacity is set):
+///   posX, posY, velX, velY, age, lifetime
+///
+/// Optional shared columns (allocated on first use through Ensure*):
+///   rotation, rotationSpeed, scale, tintR, tintG, tintB, tintA
+///
+/// A modifier that needs private per-particle data allocates it in its
+/// onAttach, in the per-emitter state blob; pool columns are kept for shared
+/// state the render path reads.
+///
+/// A dying particle swaps with the last live one: O(1), and [0, aliveCount)
+/// stays dense.
 class ParticlePool
 {
 public:
@@ -48,9 +48,10 @@ public:
             return;
         }
 
-        // Time columns (age/lifetime) are seconds; spatial columns are meters.
-        // Internal because every column is walked every frame, and external
-        // RAM is reached over SPI. Memory zeroes what it hands back.
+        // Time columns (age, lifetime) are in seconds; spatial columns in
+        // meters. Internal memory, because every column is walked every frame
+        // and external RAM is reached over SPI. Deki::Memory zeroes what it
+        // returns.
         posX.Allocate(newCapacity, Deki::Memory::Internal);
         posY.Allocate(newCapacity, Deki::Memory::Internal);
         velX.Allocate(newCapacity, Deki::Memory::Internal);
@@ -58,8 +59,7 @@ public:
         age.Allocate(newCapacity, Deki::Memory::Internal);
         lifetime.Allocate(newCapacity, Deki::Memory::Internal);
 
-        // All or nothing: a pool missing one column would still be indexed
-        // by every update.
+        // All or nothing: every update would still index a missing column.
         if (!posX || !posY || !velX || !velY || !age || !lifetime)
         {
             DEKI_LOG_WARNING("ParticlePool: no room for %d particles; the emitter is empty", newCapacity);
@@ -71,7 +71,7 @@ public:
     int Capacity() const { return m_Capacity; }
     int AliveCount() const { return m_AliveCount; }
 
-    // Spawn a new particle slot. Returns -1 if pool is full.
+    // Claims a new particle slot. Returns -1 if the pool is full.
     int Spawn()
     {
         if (m_AliveCount >= m_Capacity)
@@ -82,10 +82,9 @@ public:
         return idx;
     }
 
-    // Kill particle at index by swapping with last alive. Caller is
-    // responsible for swapping any optional columns it cares about.
-    // Returns the index that the formerly-last particle was moved to
-    // (== idx), or -1 if idx was already past the alive range.
+    // Kills the particle at idx by moving the last live one into its slot.
+    // The caller swaps any optional columns it cares about. Returns the index
+    // the last particle moved to (idx), or -1 if idx was past the live range.
     int KillSwap(int idx)
     {
         if (idx < 0 || idx >= m_AliveCount)
@@ -122,7 +121,7 @@ public:
         return idx;
     }
 
-    // Optional columns — allocated on first request. Idempotent.
+    // Optional columns, allocated on first request. Safe to call repeatedly.
     void EnsureRotation()
     {
         if (m_HasRotation || m_Capacity <= 0)
@@ -185,8 +184,8 @@ public:
     bool HasScale() const { return m_HasScale; }
     bool HasTint() const { return m_HasTint; }
 
-    // Always-present columns (public for tight inner loops). Spatial columns
-    // in meters, time columns (age/lifetime) in seconds.
+    // Columns always present, public for tight inner loops. Spatial columns in
+    // meters, time columns (age, lifetime) in seconds.
     Deki::Buffer<float> posX;
     Deki::Buffer<float> posY;
     Deki::Buffer<float> velX;
@@ -194,8 +193,8 @@ public:
     Deki::Buffer<float> age;
     Deki::Buffer<float> lifetime;
 
-    // Optional columns (nullptr until corresponding Ensure* called).
-    // rotation is in radians (engine convention).
+    // Optional columns, empty until their Ensure* is called. rotation is in
+    // radians (engine convention).
     Deki::Buffer<float> rotation;       // radians
     Deki::Buffer<float> rotationSpeed;  // radians/sec
     Deki::Buffer<float> scale;

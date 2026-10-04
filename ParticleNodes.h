@@ -11,38 +11,37 @@ namespace DekiParticles
 
 // Node vocabulary for the particle graph ("Particles" domain).
 //
-// A particle graph is the RECIPE for an effect: the Emitter node, then a chain
+// A particle graph is the recipe for an effect: the Emitter node, then a chain
 // of modifier nodes wired one to the next. ParticleEmitterComponent references
-// the graph asset and walks it ONCE when it starts, building a flat list of
+// the graph asset and walks it once when it starts, building a flat list of
 // modifier callbacks. Nothing here is interpreted per particle: the per-frame
-// cost is exactly the cost of the modifiers you wired, the same code that ran
-// when these were sibling components.
+// cost is exactly the cost of the modifiers you wired.
 //
-// WIRE ORDER IS EXECUTION ORDER. The chain runs from the Emitter's output
-// forward, and that is the only ordering authority — there are no hidden
-// phases. The order that makes sense is the one these categories are listed
-// in: Emission first (it spawns the particles everything else acts on), then
-// the Initial nodes (they set a new particle's starting state), then Forces,
-// then the Over Lifetime nodes. Wiring a spawn-time node ahead of Emission is
-// legal and simply means it does not see the particles Emission spawns until
-// the following frame.
+// Wire order is execution order. The chain runs forward from the Emitter's
+// output, and nothing else orders it; there are no hidden phases. The
+// sensible order is the one these categories are listed in: Emission first
+// (it spawns the particles everything else acts on), then the Initial nodes
+// (a new particle's starting state), then Forces, then the Over Lifetime
+// nodes. A spawn-time node wired ahead of Emission is allowed; it just sees
+// the particles Emission spawns one frame later.
 //
-// Data here is SHARED by every emitter using the graph. Anything a modifier
-// needs to remember between frames (a rate accumulator, a burst latch) lives
-// in the per-emitter state blob the chain allocates, never in these structs.
-// See ParticleModifierRegistry.h.
+// The data here is shared by every emitter using the graph. Anything a
+// modifier must remember between frames (a rate accumulator, a burst latch)
+// lives in the per-emitter state blob the chain allocates, never in these
+// structs. See ParticleModifierRegistry.h.
 //
 // A new modifier type is a struct here (plus its generated include at the
 // bottom), an ops registration in ParticleModifierLibrary.cpp, and a line in
 // DekiParticlesRegisterGraphTypes. Another package can add one the same way
-// with no change to deki-particles: its category just has to start "Particles/".
+// with no change to deki-particles, as long as its category starts
+// "Particles/".
 
 // ---------------------------------------------------------------------------
 // Flow
 // ---------------------------------------------------------------------------
 
-// Where the chain begins. Permanent: seeded into every particle graph, absent
-// from the add menu, not deletable. Wire its output to the first modifier.
+// Where the chain begins. Every particle graph starts with one; it is not in
+// the add menu and cannot be deleted. Wire its output to the first modifier.
 struct ParticleEmitNode
 {
     DEKI_NODE(ParticleEmitNode, "ParticleEmit", "Particles/Flow")
@@ -63,8 +62,8 @@ enum class EmitterShapeKind : uint8_t
     Rect = 2,
 };
 
-// Spawning: how often, where, and for how long. Continuous and burst are
-// additive rather than exclusive — a rate for steady output, a burst count for
+// Spawning: how often, where, and for how long. Continuous and burst add up
+// rather than exclude each other: a rate for steady output, a burst count for
 // puffs, both for "ambient plus the occasional gust".
 struct ParticleEmissionNode
 {
@@ -90,7 +89,7 @@ public:
     DEKI_GROUP("Continuous")
     DEKI_EXPORT
     DEKI_RANGE(0, 1000)
-    float emissionRate = 20.0f;  // particles/second (0 = disable continuous)
+    float emissionRate = 20.0f;  // particles/second (0 = no continuous emission)
 
     // ---- Burst -------------------------------------------------------------
     DEKI_GROUP("Burst")
@@ -103,7 +102,7 @@ public:
     float burstInterval = 0.0f;  // seconds between bursts (0 = single burst at start)
 
     // ---- Shape -------------------------------------------------------------
-    // Sampled in emitter-local space; the emitter's world position is added on
+    // Sampled in emitter-local space; the emitter's world position is added at
     // spawn when worldSpace is on.
     DEKI_GROUP("Shape")
     DEKI_EXPORT
@@ -235,7 +234,7 @@ public:
 
     DEKI_EXPORT
     DEKI_RANGE(0.0f, 20.0f)
-    float drag = 1.0f;  // 1/sec — at 1.0 a particle loses ~63% of its speed per second
+    float drag = 1.0f;  // 1/sec; at 1.0 a particle loses ~63% of its speed per second
 };
 
 // ---------------------------------------------------------------------------
@@ -275,9 +274,9 @@ public:
     DEKI_EXPORT Deki::Color colorAt1 = Deki::Color::Transparent;
 };
 
-// Lerps the spin RATE across the particle's life and integrates it. Pair it
-// with Initial Rotation for a starting offset, or use it alone for spin that
-// always begins at zero.
+// Lerps the spin rate across the particle's life and integrates it. Pair it
+// with Initial Rotation for a starting angle, or use it alone for spin that
+// always starts at zero.
 struct ParticleRotationOverLifetimeNode
 {
     DEKI_NODE(ParticleRotationOverLifetimeNode, "ParticleRotationOverLifetime", "Particles/Over Lifetime")

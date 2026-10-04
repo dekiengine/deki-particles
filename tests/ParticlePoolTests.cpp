@@ -1,12 +1,10 @@
-// ParticlePool - the struct-of-arrays store every emitter and modifier indexes.
+// ParticlePool: the struct-of-arrays store every emitter and modifier indexes.
 //
-// The columns moved from raw `new float[]` to Deki::Buffer so they allocate
-// through the engine and free themselves. That conversion is the reason this
-// suite exists: the pool's rules are all invariants a destructor cannot check
-// on its own - that a partial allocation leaves an EMPTY pool rather than one
-// with five of six columns, that an optional column group stays disabled as a
-// group, that KillSwap moves every column it claims to, and that a capacity
-// that has not changed does not churn the memory a live emitter is reading.
+// Its columns are Deki::Buffers, allocated through the engine. These tests
+// pin the rules a destructor cannot check: a partial allocation leaves an
+// empty pool, not one with five of six columns; an optional column group
+// stays disabled as a group; KillSwap moves every column it claims to; and an
+// unchanged capacity does not reallocate memory a live emitter is reading.
 
 #include <gtest/gtest.h>
 
@@ -16,7 +14,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-// The package's types moved into its namespace; tests name them unqualified.
+// Tests name the package's types unqualified.
 using namespace DekiParticles;
 
 using DekiParticles::ParticlePool;
@@ -25,11 +23,10 @@ namespace
 {
 
 // A memory backend that hands out a fixed number of allocations and then
-// refuses. The out-of-memory branches below cannot be reached any other way
-// from a host test: capacity is an int, so the largest pool asks for 8 GB a
-// column, which a 64-bit desktop simply commits (it took 22 seconds and
-// succeeded before this existed). On the device the same branches are the
-// normal case for a pool a few hundred KB too large.
+// refuses. A host test cannot reach the out-of-memory branches any other way:
+// capacity is an int, so the largest pool asks for 8 GB a column, which a
+// 64-bit desktop simply commits (slowly). On a device the same branches are
+// the normal case for a pool a few hundred KB too large.
 class FailAfterProvider : public Deki::IMemoryProvider
 {
 public:
@@ -41,9 +38,7 @@ public:
     bool Initialize() override { return true; }
     void Shutdown() override {}
 
-    // One heap, a fixed number of allocations, then refusal — which is the
-    // only way to reach the out-of-memory paths from a host test, where a
-    // 64-bit heap will commit anything a size_t can express.
+    // One heap, a fixed number of allocations, then refusal.
     bool Serves(Deki::Memory::Region region) const override
     {
         return region == Deki::Memory::Internal || region == Deki::Memory::External;
@@ -62,18 +57,18 @@ public:
 
     void Free(Deki::Memory::Region, void* ptr) override { free(ptr); }
 
-    // Not modelled: the budget counts allocations rather than bytes, so there
-    // is no byte figure to report and a made-up one would show up in the
-    // out-of-memory line these tests provoke.
+    // The budget counts allocations, not bytes, so there is no byte figure to
+    // report; a made-up one would appear in the out-of-memory line these tests
+    // provoke.
     size_t GetAvailable(Deki::Memory::Region) const override { return 0; }
 
 private:
     int m_Allowed;
 };
 
-// Installs that backend for the scope and takes it back out again. Safe to
-// swap mid-run because it wraps the same malloc/free the default host path
-// uses, so a block allocated under it can be freed after it is gone.
+// Installs that backend for the scope, then removes it. Safe to swap mid-run:
+// it wraps the same malloc/free as the default host path, so a block
+// allocated under it can be freed after it is gone.
 struct ScopedFailingAllocator
 {
     explicit ScopedFailingAllocator(int allowed) { Deki::Memory::SetBackend(new FailAfterProvider(allowed)); }
@@ -98,8 +93,8 @@ TEST(ParticlePool, SetCapacityAllocatesEveryRequiredColumn)
     pool.SetCapacity(64);
     ASSERT_EQ(pool.Capacity(), 64);
 
-    // All six required columns, or the pool would be indexed past its end by
-    // an update that assumes they exist together.
+    // All six required columns, since every update assumes they exist
+    // together.
     EXPECT_TRUE(static_cast<bool>(pool.posX));
     EXPECT_TRUE(static_cast<bool>(pool.posY));
     EXPECT_TRUE(static_cast<bool>(pool.velX));
@@ -111,8 +106,8 @@ TEST(ParticlePool, SetCapacityAllocatesEveryRequiredColumn)
 
 TEST(ParticlePool, RequiredColumnsStartZeroed)
 {
-    // Spawn only writes the fields its emit node sets; the rest are read as
-    // they are. The columns used to be `new float[n]{}` for this reason.
+    // Spawn writes only the fields its emit node sets; the rest are read as
+    // they are, so they must start at zero.
     ParticlePool pool;
     pool.SetCapacity(32);
     ASSERT_EQ(pool.Capacity(), 32);
@@ -140,7 +135,7 @@ TEST(ParticlePool, ZeroAndNegativeCapacityAllocateNothing)
 TEST(ParticlePool, SameCapacityDoesNotChurnTheMemory)
 {
     // EnsurePoolAllocated calls this whenever maxParticles is touched, which
-    // on a live emitter must not move the columns out from under it.
+    // must not move a live emitter's columns from under it.
     ParticlePool pool;
     pool.SetCapacity(16);
     const float* raw = pool.posX.Data();
@@ -291,8 +286,8 @@ TEST(ParticlePool, EnsureRotationAllocatesBothColumnsOfThePair)
 
 TEST(ParticlePool, EnsureScaleStartsAtOneNotZero)
 {
-    // Zero-initialised scale would make every particle invisible the frame a
-    // Size over Lifetime node attaches.
+    // A zero scale would make every particle invisible the frame a Size over
+    // Lifetime node attaches.
     ParticlePool pool;
     pool.SetCapacity(8);
     pool.EnsureScale();
@@ -305,7 +300,7 @@ TEST(ParticlePool, EnsureScaleStartsAtOneNotZero)
 
 TEST(ParticlePool, EnsureTintStartsOpaqueWhite)
 {
-    // Zero-initialised tint would multiply every particle to transparent black.
+    // A zero tint would make every particle transparent black.
     ParticlePool pool;
     pool.SetCapacity(8);
     pool.EnsureTint();
@@ -321,8 +316,8 @@ TEST(ParticlePool, EnsureTintStartsOpaqueWhite)
 
 TEST(ParticlePool, EnsureIsIdempotentAndKeepsTheWrittenValues)
 {
-    // Every modifier in a chain calls Ensure* in its onAttach, so the second
-    // caller must not reallocate over what the first one is already using.
+    // Every modifier in a chain calls Ensure* in its onAttach, so a second
+    // caller must not reallocate what the first is already using.
     ParticlePool pool;
     pool.SetCapacity(8);
     pool.EnsureScale();
@@ -349,8 +344,8 @@ TEST(ParticlePool, EnsureBeforeCapacityAllocatesNothing)
 
 TEST(ParticlePool, OutOfMemoryLeavesThePoolEmptyRatherThanPartial)
 {
-    // All or nothing. There are six required columns; five of them allocating
-    // is the dangerous case, because every update indexes all six.
+    // All or nothing. With six required columns, five allocating is the
+    // dangerous case, because every update indexes all six.
     ScopedFailingAllocator oom(5);
 
     ParticlePool pool;
@@ -369,8 +364,8 @@ TEST(ParticlePool, OutOfMemoryLeavesThePoolEmptyRatherThanPartial)
 
 TEST(ParticlePool, AnOptionalPairStaysDisabledWhenOnlyHalfOfItFits)
 {
-    // rotation and rotationSpeed are read together by the spin integrator, so
-    // one of the two is not a partial success, it is a wild read.
+    // The spin integrator reads rotation and rotationSpeed together, so having
+    // only one of them is not a partial success but a wild read.
     ParticlePool pool;
     pool.SetCapacity(64);
     ASSERT_EQ(pool.Capacity(), 64);
@@ -402,7 +397,7 @@ TEST(ParticlePool, TheTintGroupStaysDisabledWhenOnlySomeChannelsFit)
 TEST(ParticlePool, ARequiredPoolThatFitsIsStillUsableAfterAnOptionalOneDoesNot)
 {
     // The emitter carries on without the feature rather than going empty:
-    // particles that do not rotate still beat no particles.
+    // particles that do not rotate are better than none.
     ParticlePool pool;
     pool.SetCapacity(8);
     ASSERT_EQ(pool.Capacity(), 8);
@@ -419,21 +414,21 @@ TEST(ParticlePool, ARequiredPoolThatFitsIsStillUsableAfterAnOptionalOneDoesNot)
 }
 
 // --- a package defining its own memory region --------------------------------
-// The engine ships "internal" and "external" and nothing else. A board with
-// memory the engine has never heard of - RTC RAM that survives deep sleep, a
-// tightly-coupled scratch bank, a non-cacheable window for DMA - is described
-// by the package that supports that board, with no engine release involved.
+// The engine ships only "internal" and "external". A board with other memory
+// (RTC RAM that survives deep sleep, a tightly-coupled scratch bank, a
+// non-cacheable window for DMA) is described by the package that supports
+// the board, with no engine release.
 //
-// This lives in a package test rather than the engine's because that is the
-// case worth proving: the region is defined here, in package code, compiled
-// separately, and the engine carries it without knowing the name.
+// This is a package test, not an engine one, because that is the case worth
+// proving: the region is defined in separately compiled package code, and the
+// engine carries it without knowing the name.
 
 namespace
 {
 
-// Deki is where the engine puts its own, and a package is free to extend
-// it or to use its own namespace. The namespace is convention; the identity is
-// the hashed name.
+// The engine names its own regions; a package may add to them or use its own
+// prefix, as here. The prefix is only a convention: a region's identity is
+// its hashed name.
 constexpr Deki::Memory::Region kScratch = Deki::Memory::Region("particles.scratch");
 
 // A board provider that serves the package's region alongside the usual ones.
@@ -484,8 +479,8 @@ TEST(PackageDefinedRegion, TheEngineCarriesARegionItHasNeverHeardOf)
 
 TEST(PackageDefinedRegion, ItIsAConstantExpressionSoItCostsNothing)
 {
-    // Usable in a static_assert and in a switch label, which is what lets a
-    // provider dispatch on it without a runtime lookup or a registration call.
+    // Usable in a static_assert and a switch label, so a provider can dispatch
+    // on it without a runtime lookup or a registration call.
     static_assert(kScratch.id == Deki::HashName("particles.scratch"));
     static_assert(kScratch != Deki::Memory::Internal);
     EXPECT_STREQ(kScratch.name, "particles.scratch");

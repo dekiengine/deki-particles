@@ -1,10 +1,8 @@
 #pragma once
 
-// Tiny header that defines only DEKI_PARTICLES_API. Package headers include
-// this instead of DekiParticlesPackage.h to avoid a circular include
-// (DekiParticlesPackage.h is the umbrella include for external consumers and
-// pulls in every header of the package, so including it from one of them would
-// re-enter the file currently being defined).
+// Defines only DEKI_PARTICLES_API. Package headers include this rather than
+// DekiParticlesPackage.h, the umbrella header for outside users, which
+// includes every header of the package and would include them circularly.
 
 #ifdef DEKI_EDITOR
 #ifdef _WIN32

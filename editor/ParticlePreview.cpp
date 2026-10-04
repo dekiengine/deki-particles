@@ -1,26 +1,23 @@
-/**
- * @file ParticlePreview.cpp
- * @brief Live preview of a particle graph inside the Node Graph window.
- *
- * Runs the effect being edited, not the saved asset: the window hands over the
- * LIVE document each tick, so a value typed in the properties panel shows up
- * on the very next frame. The chain points at the document's node instances,
- * which is what makes that work without rebuilding anything.
- *
- * The chain is rebuilt only when the graph's TOPOLOGY changes (a node added,
- * deleted or rewired), tracked by a cheap signature. Rebuilding every frame
- * would reallocate the state blobs and so reset every accumulator, and an
- * emission rate that resets each frame never emits.
- *
- * Particles draw as plain dots here, not sprites: the sprite lives on
- * ParticleEmitterComponent, not in the graph, so a graph on its own has no
- * texture to show. Motion, spread, gravity, drag, size and color all read
- * correctly from dots; only the artwork is missing.
- *
- * The emitter's SHAPE is outlined under them at the same scale, so a radius is
- * shown against the spray it produces rather than as a number in a field. It
- * draws whether or not the chain builds, since wiring is exactly when it helps.
- */
+// Live preview of a particle graph inside the Node Graph window.
+//
+// It runs the effect being edited, not the saved asset: the window passes the
+// live document each tick, so a value typed in the properties panel shows on
+// the next frame. That works without rebuilding because the chain points at
+// the document's node instances.
+//
+// The chain is rebuilt only when the graph's topology changes (a node added,
+// deleted or rewired), tracked by a cheap signature. Rebuilding every frame
+// would reallocate the state blobs and reset every accumulator, and an
+// emission rate reset every frame never emits.
+//
+// Particles are drawn as plain dots, not sprites: the sprite belongs to
+// ParticleEmitterComponent, not the graph, so a graph alone has no texture.
+// Motion, spread, gravity, drag, size and colour all show on dots; only the
+// artwork is missing.
+//
+// The emitter's shape is outlined under them at the same scale, so a radius
+// is seen against the spray it produces. It is drawn whether or not the chain
+// builds, since that is when wiring it up.
 
 #ifdef DEKI_EDITOR
 
@@ -41,9 +38,9 @@ using namespace DekiParticles;
 namespace
 {
 
-// The preview's own pool size. maxParticles is a component property, and the
-// graph does not carry one, so the preview picks a ceiling generous enough
-// that a burst is not silently clipped while you tune it.
+// The preview's own pool size. maxParticles is a component property the graph
+// does not have, so the preview picks a ceiling high enough that a burst is
+// not cut short while you tune it.
 constexpr int kPreviewMaxParticles = 512;
 
 struct ParticlePreviewState
@@ -54,9 +51,9 @@ struct ParticlePreviewState
 };
 
 // Cheap signature of what the chain depends on: which nodes exist, of what
-// type, and how they are wired. Property VALUES are deliberately absent — the
-// chain holds pointers to the live instances, so an edited value needs no
-// rebuild and must not cause one.
+// type, and how they are wired. Property values are left out on purpose: the
+// chain points at the live instances, so an edited value needs no rebuild and
+// must not cause one.
 uint64_t TopologyOf(const DekiNodeGraph::NodeGraphPreviewGraph& graph)
 {
     uint64_t h = 1469598103934665603ull;  // FNV-1a 64
@@ -81,8 +78,8 @@ uint64_t TopologyOf(const DekiNodeGraph::NodeGraphPreviewGraph& graph)
     return h;
 }
 
-// Polyline ring: the canvas has a filled circle and a line, and an outline is
-// the one thing a shape gizmo actually needs.
+// A circle outline as a polyline: the canvas offers only a filled circle and
+// lines, and a shape gizmo needs an outline.
 void StrokeCircle(const DekiNodeGraph::NodeGraphPreviewCanvas& canvas, float cx, float cy, float r, uint32_t rgba,
                   float thickness)
 {
@@ -111,12 +108,11 @@ void StrokeCircle(const DekiNodeGraph::NodeGraphPreviewCanvas& canvas, float cx,
     }
 }
 
-// The emitter's SHAPE, drawn where particles are actually born and at the scale
-// they move in. This is the one place a radius is a MEASURE rather than a
-// proportion: the panel's px/m slider scales the outline and the particles
-// together, so a 0.3 m circle looks 0.3 m next to the spray leaving it. Kept
-// faint and drawn under the particles - the effect is the subject, this is the
-// frame around it.
+// The emitter's shape, drawn where particles are born and at the scale they
+// move in. Here a radius is a real size, not a proportion: the panel's px/m
+// slider scales the outline and the particles together, so a 0.3 m circle
+// looks 0.3 m next to its spray. Faint and drawn under the particles, so the
+// effect stays the focus.
 void DrawEmitterShape(const DekiNodeGraph::NodeGraphPreviewGraph& graph, float cx, float cy, float pixelsPerMeter,
                       const DekiNodeGraph::NodeGraphPreviewCanvas& canvas)
 {
@@ -162,8 +158,8 @@ void* PreviewCreate()
     auto* p = new ParticlePreviewState();
     p->emitter.maxParticles = kPreviewMaxParticles;
     // No owner object here, so world space has no origin to add: local space
-    // puts the effect at the preview's centre. (EmissionEmit already guards on
-    // GetOwner(), so this is belt and braces.)
+    // puts the effect at the preview's centre. EmissionEmit also checks
+    // GetOwner(), so this is a second safeguard.
     p->emitter.worldSpace = false;
     return p;
 }
@@ -176,8 +172,8 @@ void PreviewDestroy(void* preview)
 void PreviewReset(void* preview)
 {
     auto* p = static_cast<ParticlePreviewState*>(preview);
-    // Drop every live particle and force a rebuild, which re-zeroes the state
-    // blobs (burst latch, rate accumulator).
+    // Drop every live particle and force a rebuild, which zeroes the state
+    // blobs again (burst latch, rate accumulator).
     while (p->emitter.pool.AliveCount() > 0)
     {
         p->emitter.pool.KillSwap(p->emitter.pool.AliveCount() - 1);
@@ -196,8 +192,8 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
     {
         std::vector<DekiParticles::ParticleChainEntry> chain;
         const char* error = nullptr;
-        // A half-wired graph is the normal state while authoring, so a failed
-        // build is not worth logging here: the panel simply shows nothing.
+        // A half-wired graph is normal while authoring, so a failed build is
+        // not logged; the panel just shows nothing.
         if (DekiParticles::BuildParticleChain(graph, Deki::HashString(ParticleEmitNode::StaticNodeName), chain, &error))
         {
             p->emitter.AdoptChain(std::move(chain));
@@ -215,13 +211,13 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
         p->emitter.Simulate(dt);
     }
 
-    // Origin at the centre of the preview rect, Y up (world convention) mapped
-    // to Y down (screen).
+    // Origin at the centre of the preview rect; world Y up maps to screen Y
+    // down.
     const float cx = x + w * 0.5f;
     const float cy = y + h * 0.5f;
 
     // Before the early-out: a half-wired graph draws no particles, and the
-    // shape is exactly what you want to see while wiring it up.
+    // shape is what you want to see while wiring it up.
     DrawEmitterShape(graph, cx, cy, pixelsPerMeter, canvas);
 
     if (!p->built)
@@ -245,8 +241,8 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
             radius = 0.75f;
         }
 
-        // Skip what falls outside the panel. The window clips too; this just
-        // saves the draw calls for an effect that flies off screen.
+        // Skip what falls outside the panel. The window clips anyway; this
+        // saves draw calls for an effect that flies off screen.
         if (px + radius < x || px - radius > x + w || py + radius < y || py - radius > y + h)
         {
             continue;
@@ -269,9 +265,8 @@ void PreviewTick(void* preview, const DekiNodeGraph::NodeGraphPreviewGraph& grap
 
         canvas.circleFilled(canvas.ctx, px, py, radius, rgba);
 
-        // A dot cannot show spin, so rotating particles get a spoke. Without
-        // it, Initial Rotation and Rotation over Lifetime would look like they
-        // do nothing at all.
+        // A dot cannot show spin, so rotating particles get a spoke; otherwise
+        // Initial Rotation and Rotation over Lifetime would seem to do nothing.
         if (pool.HasRotation() && radius >= 2.0f)
         {
             const float ang = pool.rotation[i];

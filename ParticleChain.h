@@ -9,19 +9,15 @@
 namespace DekiParticles
 {
 
-/**
- * @file ParticleChain.h
- * @brief Walking a particle graph into a flat list of modifier callbacks.
- *
- * Two callers with the same shape: the runtime emitter walking a loaded
- * ParticleGraph asset, and the editor preview walking the LIVE document being
- * edited. Both graph types answer FindFirstOfType(typeId) and Next(nodeId,
- * pin) and expose nodes with {id, instance}, so the walk is written once as a
- * template rather than twice with a copy-paste drift risk.
- */
+// Walks a particle graph into a flat list of modifier callbacks.
+//
+// Two callers: the runtime emitter walking a loaded ParticleGraph asset, and
+// the editor preview walking the live document being edited. Both graph types
+// answer FindFirstOfType(typeId) and Next(nodeId, pin) and expose nodes with
+// {id, instance}, so the walk is one template and the two cannot drift apart.
 
 // One modifier in a built chain: the node's shared authoring data, the owner's
-// private state blob, and the behavior to run.
+// private state blob, and the behaviour to run.
 struct ParticleChainEntry
 {
     const void* data = nullptr;  // node instance (owned by the graph)
@@ -42,14 +38,10 @@ inline void FreeParticleChain(std::vector<ParticleChainEntry>& chain)
 // handful of modifiers; nothing legitimate comes close.
 constexpr int kMaxParticleChainLength = 256;
 
-/**
- * @brief Walk from the Emitter node forward, one output pin per hop.
- *
- * Wire order IS execution order. Returns false with *outError set (never
- * partially built) when there is no entry node or a node names a modifier type
- * with no registered behavior; a silent no-op modifier would be the kind of
- * quiet nothing this project refuses.
- */
+/// Walks from the Emitter node forward, one output pin per hop; wire order is
+/// execution order. Returns false with *outError set, and nothing built, when
+/// there is no entry node or a node names a modifier type with no registered
+/// behaviour. Skipping such a modifier would hide the mistake.
 template <typename GraphT>
 bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId, std::vector<ParticleChainEntry>& out,
                         const char** outError)
@@ -68,7 +60,7 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId, std::vector<P
         const auto* next = graph.Next(node->id, 0);
         if (!next)
         {
-            return !out.empty();  // End of the chain.
+            return !out.empty();  // end of the chain
         }
 
         const ParticleModifierOps* ops = ParticleModifierRegistry::Instance().Find(next->typeId);
@@ -82,10 +74,10 @@ bool BuildParticleChain(const GraphT& graph, uint32_t entryTypeId, std::vector<P
         ParticleChainEntry e;
         e.data = next->instance;
         e.ops = ops;
-        // Zero-initialized: every modifier's state starts at "nothing has
-        // happened yet", which is what a fresh accumulator or latch means.
-        // Memory zeroes what it hands back, so the {} is not lost. A modifier
-        // whose state will not fit is refused rather than run uninitialised.
+        // Zeroed: every modifier's state starts at "nothing has happened
+        // yet", which is what a fresh accumulator or latch means. Deki::Memory
+        // zeroes what it returns. A modifier whose state does not fit is
+        // refused rather than run uninitialised.
         e.state =
             ops->stateSize ? Deki::Memory::AllocateArray<uint8_t>(ops->stateSize, Deki::Memory::Internal) : nullptr;
         if (ops->stateSize && !e.state)

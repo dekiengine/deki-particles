@@ -14,39 +14,35 @@
 namespace DekiParticles
 {
 
-/**
- * @brief Renderable particle emitter.
- *
- * Owns a fixed-size particle pool. All authoring (emission rate, spawn shape,
- * gravity, color/size/rotation curves, etc.) lives in a ParticleGraph asset:
- * an Emitter node followed by a chain of modifier nodes, wired in the order
- * they should run. The emitter walks that graph ONCE (EnsureReady) into a flat
- * list of callbacks; per particle, the cost is exactly the modifiers wired,
- * with no graph interpretation in the loop.
- *
- * One graph drives any number of emitters. The node instances holding the
- * tuning values belong to the asset and are shared; each emitter owns only the
- * small per-modifier state blobs its chain allocated.
- *
- * Units: particle positions and velocities are world metres, like every
- * other component (the graph nodes' speeds are m/s). The sprite is drawn at
- * its own pixelsPerMeter, so a particle sprite has the size its art was
- * authored at when the camera runs at the sprite's ppm, and scale 1 means
- * "as authored".
- *
- * Render path: rasterizes all alive particles into a single intermediate
- * RGB565A8 buffer at the sprite's pixel scale, sized to the tight bounding box of the
- * alive particles, and returns one QuadBlit::Source with pixelsPerMeter set
- * to the sprite's. The framework does the final blit at the emitter's world
- * transform — sort order is per-emitter, never per-particle.
- * GetContentExtents reports the same bounding box so an emitter whose
- * particles are all off screen (or clipped away) does no work at all.
- *
- * Per CLAUDE.md "NEVER USE FALLBACKS": no sprite ⇒ renders nothing, logs
- * once. No graph ⇒ no particles ever spawn. A graph naming a modifier type
- * with no registered behavior refuses to build its chain, loudly. maxParticles
- * is honored exactly.
- */
+/// A particle emitter that draws itself.
+///
+/// It owns a fixed-size particle pool. All authoring (emission rate, spawn
+/// shape, gravity, colour, size and rotation curves, etc.) lives in a
+/// ParticleGraph asset: an Emitter node followed by a chain of modifier nodes,
+/// wired in the order they run. The emitter walks that graph once
+/// (EnsureReady) into a flat list of callbacks, so per particle the cost is
+/// exactly the modifiers wired, with no graph interpretation in the loop.
+///
+/// One graph drives any number of emitters. The node instances holding the
+/// tuning values belong to the asset and are shared; each emitter owns only
+/// the small per-modifier state blobs its chain allocated.
+///
+/// Units: particle positions and velocities are world metres, like every other
+/// component (the graph nodes' speeds are m/s). The sprite is drawn at its own
+/// pixelsPerMeter, so when the camera runs at the sprite's ppm a particle has
+/// the size its art was authored at, and scale 1 means "as authored".
+///
+/// Rendering: all live particles are drawn into one RGB565A8 buffer at the
+/// sprite's pixel scale, sized to their tight bounding box, and returned as one
+/// QuadBlit::Source with the sprite's pixelsPerMeter. The renderer blits it at
+/// the emitter's world transform, so sort order is per emitter, never per
+/// particle. GetContentExtents reports the same box, so an emitter whose
+/// particles are all off screen or clipped away does no work.
+///
+/// No fallbacks: with no sprite it draws nothing and logs once; with no graph
+/// no particles spawn; a graph naming a modifier type with no registered
+/// behaviour refuses to build its chain and logs it. maxParticles is honoured
+/// exactly.
 DEKI_CATEGORY("Particles")
 DEKI_DESCRIPTION("Spawns and draws particles, following a particle graph asset.")
 DEKI_FORMER_NAME("ParticleEmitterComponent")
@@ -97,49 +93,47 @@ public:
     bool RenderContent(const Deki::Object* owner, QuadBlit::Source& outSource, float& outPivotX, float& outPivotY,
                        uint8_t& outTintR, uint8_t& outTintG, uint8_t& outTintB, uint8_t& outTintA) override;
 
-    // Public so modifiers can read/write directly. Hot-path inner loops touch
-    // these without going through accessors.
+    // Public so modifiers' inner loops can use them directly, without accessors.
     DekiParticles::ParticlePool pool;
     DekiParticles::Xorshift32 rng;
 
-    // Walk the graph asset into m_Chain (see ParticleChain.h). Called by
-    // EnsureReady; call it directly after assigning a different graph asset.
-    // Returns false (leaving the chain empty) when there is no graph to walk yet.
+    /// Walks the graph asset into m_Chain (see ParticleChain.h). EnsureReady
+    /// calls it; call it yourself after assigning a different graph asset.
+    /// Returns false, with the chain empty, when there is no graph to walk yet.
     bool RebuildChain();
 
     const std::vector<ParticleChainEntry>& Chain() const { return m_Chain; }
 
 #ifdef DEKI_EDITOR
-    // Take a chain built elsewhere and run its attach pass. The editor preview
-    // uses this to drive a graph that has no asset yet: the one being edited.
-    // Takes ownership of the state blobs.
+    /// Takes a chain built elsewhere, with ownership of its state blobs, and
+    /// runs its attach pass. The editor preview uses it for the graph being
+    /// edited, which has no asset yet.
     void AdoptChain(std::vector<ParticleChainEntry>&& chain);
 #endif
 
-    // Spawn one particle. Returns its index in [0, AliveCount), or -1 if full.
-    // Calls OnEmit on every modifier in phase order (including the modifier
-    // that called Spawn — modifiers above its phase will not see this
-    // particle until next frame, which is intentional and consistent).
+    /// Spawns one particle. Returns its index in [0, AliveCount), or -1 if
+    /// full. Calls OnEmit on every modifier in phase order, including the one
+    /// that called Spawn. Modifiers before that one in the chain first see the
+    /// particle next frame, by design.
     int Spawn();
 
-    // Single tick of simulation: age, kill, dispatch modifiers, integrate.
-    // Update() calls this with the engine's frame delta. The editor preview
-    // path also calls it (with the editor's frame delta) so emitters animate
-    // in edit mode without needing Play.
+    /// One simulation step: age, kill, run the modifiers, integrate. Update()
+    /// calls it with the engine's frame delta; the editor preview calls it with
+    /// the editor's, so emitters animate in edit mode without Play.
     void Simulate(float dt);
 
 #ifdef DEKI_EDITOR
-    // Editor-only preview controls. State is NOT serialized.
+    // Editor-only preview controls. Their state is not saved.
     bool IsEditorPreviewPlaying() const { return m_EditorPreviewPlaying; }
     void EditorPreviewSetPlaying(bool play) { m_EditorPreviewPlaying = play; }
-    // Kill all live particles and rebuild the chain from the graph, which
-    // resets every modifier's state (the burst latch, the rate accumulator).
+    /// Kills all live particles and rebuilds the chain from the graph, which
+    /// resets every modifier's state (the burst latch, the rate accumulator).
     void EditorPreviewRestart();
 #endif
 
-    // Pool allocation + chain build + per-modifier onAttach bootstrap,
-    // factored out of Start() so the editor preview path can run it in edit
-    // mode (where Start() never fires). Idempotent.
+    /// Allocates the pool, builds the chain and runs each modifier's onAttach.
+    /// Separate from Start() so the editor preview can run it in edit mode,
+    /// where Start() never fires. Safe to call repeatedly.
     void EnsureReady();
 
 private:
@@ -151,7 +145,8 @@ private:
     bool m_EditorPreviewPlaying = false;
 #endif
 
-    // Render-side persistent buffer (grows to fit, never shrinks for jitter).
+    // Composite buffer kept between frames. It grows to fit and never shrinks,
+    // so a size that jitters does not reallocate.
     uint8_t* m_BboxBuf = nullptr;
     int m_BboxBufBytes = 0;
 
@@ -162,9 +157,9 @@ private:
     void FreeBboxBuf();
     void FreeChain();
 
-    // Tight bounding box of the alive particles in composite pixels (the
-    // sprite's pixel scale), relative to the emitter origin. False when
-    // there is nothing to draw.
+    // Tight bounding box of the live particles in composite pixels (the
+    // sprite's pixel scale), relative to the emitter origin. False when there
+    // is nothing to draw.
     struct Bounds
     {
         int32_t minX, minY, maxX, maxY;
@@ -173,7 +168,5 @@ private:
     bool ComputeBounds(const Deki2D::Sprite* spr, float anchorX, float anchorY, Bounds& out) const;
     void AnchorFor(const Deki::Object* owner, float& anchorX, float& anchorY) const;
 };
-
-// Generated property metadata
 
 }  // namespace DekiParticles

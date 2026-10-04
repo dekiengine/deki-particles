@@ -1,17 +1,12 @@
-/**
- * @file ParticleModifierLibrary.cpp
- * @brief Runtime behavior (ParticleModifierOps) for the built-in modifier set.
- *
- * Data structs live in ParticleNodes.h; this file supplies each one's
- * callbacks and registers them keyed by node-name hash
- * (REGISTER_PARTICLE_MODIFIER). Per-emitter state goes in the chain's
- * zero-initialized blob (ops.stateSize), never in the shared data struct: many
- * emitters may run the same graph asset, and a rate accumulator kept in the
- * struct would have them all fighting over one counter.
- *
- * The hot loops here are the same loops these modifiers ran as components. The
- * graph is walked once, at chain-build time, and never touched again.
- */
+// Runtime behaviour (ParticleModifierOps) for the built-in modifiers.
+//
+// The data structs live in ParticleNodes.h; this file supplies each one's
+// callbacks and registers them by node-name hash (REGISTER_PARTICLE_MODIFIER).
+// Per-emitter state goes in the chain's zeroed blob (ops.stateSize), never in
+// the shared data struct: many emitters may run the same graph asset, and a
+// rate accumulator in the struct would be one counter they all fight over.
+//
+// The graph is walked once, when the chain is built, and not touched again.
 
 #include "ParticleNodes.h"
 #include "ParticleModifierRegistry.h"
@@ -29,8 +24,7 @@ namespace DekiParticles
 namespace
 {
 
-// The `enabled` reader every modifier node shares. One template beats nine
-// copies of the same cast.
+// The `enabled` reader every modifier node shares.
 template <typename T>
 bool NodeEnabled(const void* data)
 {
@@ -41,8 +35,8 @@ bool NodeEnabled(const void* data)
 // Emission
 // ---------------------------------------------------------------------------
 
-// Per-emitter spawn bookkeeping. POD: the blob is zero-initialized, and zero
-// is the correct starting value for all three.
+// Per-emitter spawn bookkeeping. Plain data: the blob starts zeroed, and zero
+// is the right starting value for all three.
 struct EmissionState
 {
     float rateAccumulator;
@@ -62,7 +56,7 @@ void EmissionEmit(const void* data, void* /*state*/, ParticleEmitterComponent& e
 {
     const auto* d = static_cast<const ParticleEmissionNode*>(data);
 
-    // 1. Lifetime — random in [min, max], clamped to a sane minimum.
+    // 1. Lifetime: random in [min, max], with a small positive minimum.
     float tN = emitter.rng.NextFloat01();
     float life = d->lifetimeMin + (d->lifetimeMax - d->lifetimeMin) * tN;
     static const float kMinLife = 0.001f;
@@ -72,17 +66,17 @@ void EmissionEmit(const void* data, void* /*state*/, ParticleEmitterComponent& e
     }
     emitter.pool.lifetime[i] = life;
 
-    // 2. Spawn position — sample the configured shape in emitter-local space,
-    //    then add the emitter's world origin if worldSpace is on so the
-    //    particle starts at the emitter's location.
+    // 2. Spawn position: sample the shape in emitter-local space, then add
+    //    the emitter's world origin when worldSpace is on, so the particle
+    //    starts at the emitter.
     float ox = 0.0f, oy = 0.0f;
     switch (d->shape)
     {
         case EmitterShapeKind::Point: break;
         case EmitterShapeKind::Circle:
         {
-            // Uniform sample inside disc: r = R*sqrt(u), theta = 2pi*v.
-            // theta is in radians (engine convention).
+            // Uniform sample inside a disc: r = R*sqrt(u), theta = 2pi*v, in
+            // radians (engine convention).
             float u = emitter.rng.NextFloat01();
             float v = emitter.rng.NextFloat01();
             float r = d->radius * std::sqrt(u);
@@ -119,7 +113,7 @@ void EmissionSimulate(const void* data, void* state, ParticleEmitterComponent& e
     const auto* d = static_cast<const ParticleEmissionNode*>(data);
     auto* s = static_cast<EmissionState*>(state);
 
-    // Continuous emission — accumulator-based so fractional rates work.
+    // Continuous emission, with an accumulator so fractional rates work.
     if (d->emissionRate > 0.0f)
     {
         s->rateAccumulator += d->emissionRate * dt;
@@ -128,15 +122,15 @@ void EmissionSimulate(const void* data, void* state, ParticleEmitterComponent& e
             s->rateAccumulator -= 1.0f;
             if (emitter.Spawn() < 0)
             {
-                s->rateAccumulator = 0.0f;  // pool full, drop pending spawns
+                s->rateAccumulator = 0.0f;  // pool full: drop pending spawns
                 break;
             }
         }
     }
 
-    // Burst emission — independent of `emissionRate`. Both can run together
-    // for "ambient plus occasional puff" effects (the inspector splits them
-    // into separate groups so the relationship is visible).
+    // Burst emission, independent of `emissionRate`. Both can run together
+    // for "ambient plus the occasional puff" (the inspector shows them as
+    // separate groups to make that clear).
     if (d->burstCount > 0)
     {
         if (!s->firedFirstBurst)
@@ -202,8 +196,8 @@ void InitialRotationEmit(const void* data, void* /*state*/, ParticleEmitterCompo
 
 void InitialRotationSimulate(const void* /*data*/, void* /*state*/, ParticleEmitterComponent& emitter, float dt)
 {
-    // Integrate spin so per-particle rotationSpeed has effect even when no
-    // Rotation over Lifetime node is in the chain.
+    // Integrate spin, so per-particle rotationSpeed works even without a
+    // Rotation over Lifetime node in the chain.
     int n = emitter.pool.AliveCount();
     float* rot = emitter.pool.rotation.Data();
     float* spd = emitter.pool.rotationSpeed.Data();
@@ -320,8 +314,8 @@ void ColorOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitte
         {
             t = 1.0f;
         }
-        // 8.8 fixed-point lerp avoids the float-to-int truncation pattern in
-        // the hot loop on MCUs without fast int-from-float.
+        // 8.8 fixed-point lerp, which keeps float-to-int conversions out of
+        // the loop on MCUs where they are slow.
         int ti = static_cast<int>(t * k256);
         tR[i] = (uint8_t)(r0 + ((dr * ti) >> 8));
         tG[i] = (uint8_t)(g0 + ((dg * ti) >> 8));
@@ -343,8 +337,8 @@ void RotationOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmi
 {
     const auto* d = static_cast<const ParticleRotationOverLifetimeNode*>(data);
     int n = emitter.pool.AliveCount();
-    // rotation is float radians (engine convention); speeds are radians/sec,
-    // so integration is a simple unit-agnostic accumulate.
+    // rotation is in radians (engine convention) and speeds in radians/sec,
+    // so integrating is a plain accumulate.
     float a0 = d->spinSpeedAt0;
     float da = d->spinSpeedAt1 - a0;
     float* age = emitter.pool.age.Data();

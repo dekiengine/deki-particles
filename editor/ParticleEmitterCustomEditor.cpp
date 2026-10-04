@@ -1,16 +1,12 @@
-/**
- * @file ParticleEmitterCustomEditor.cpp
- * @brief Inspector override for DekiParticles::ParticleEmitterComponent.
- *
- *  - Renders a preview transport (play / pause / step / restart) plus a speed
- *    slider that drives editor-mode simulation via OnEditorUpdate.
- *  - Draws the emission shape as a gizmo when the object is selected.
- *
- * The modifiers are nodes of the assigned ParticleGraph asset, edited in the
- * Node Graph window (double-click the asset), so there is no package list here.
- * Restart rebuilds the chain from the graph, which is how a graph edit reaches
- * a running preview.
- */
+// Inspector for DekiParticles::ParticleEmitterComponent:
+//  - preview controls (play / pause / step / restart) and a speed slider,
+//    which drive the edit-mode simulation through OnEditorUpdate;
+//  - the emission shape drawn as a gizmo when the object is selected.
+//
+// The modifiers are nodes of the assigned ParticleGraph asset, edited in the
+// Node Graph window (double-click the asset), so they are not listed here.
+// Restart rebuilds the chain from the graph, which is how a graph edit
+// reaches a running preview.
 
 #ifdef DEKI_EDITOR
 
@@ -22,7 +18,7 @@
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include <deki/Object.h>
-// ImGui is provided transitively by <deki-editor/CustomEditor.h>
+// ImGui comes in through <deki-editor/CustomEditor.h>.
 #include <unordered_map>
 #include <cstdio>
 #include <chrono>
@@ -30,20 +26,19 @@
 // Editor extensions live in DekiEditor; the package's own types are in DekiParticles.
 using namespace DekiParticles;
 
-// These were inlined Lucide codepoints (U+E12E/E13C/E148/E3EA), copied from an
-// editor-private IconsLucide.h. They never rendered: the editor merges only
-// tabler-icons.ttf, from ICON_MIN_TI (0xEA02) upward, so all four fell outside
-// the loaded range and drew as missing glyphs. IconsTabler.h is a public
-// deki-editor header, so use it directly rather than re-inlining bytes.
+// Icons come from IconsTabler.h, a public deki-editor header. Do not inline
+// codepoints from other icon sets: the editor loads only tabler-icons.ttf,
+// from ICON_MIN_TI (0xEA02) upward, and anything else draws as a missing
+// glyph.
 
 namespace DekiEditor
 {
 
 namespace
 {
-// The shape the gizmo draws lives in the graph's first Emission node.
-// Reading it here rather than caching keeps the gizmo honest while the
-// graph is being edited in the other window.
+// The shape the gizmo draws lives in the graph's first Emission node. It is
+// read each time rather than cached, so the gizmo stays right while the graph
+// is edited in the other window.
 const ParticleEmissionNode* FindEmission(DekiParticles::ParticleEmitterComponent* emitter)
 {
     ParticleGraph* g = emitter->graph.Get();
@@ -76,9 +71,9 @@ public:
             return;
         }
 
-        // Measure the editor frame delta locally — Deki::Time::GetDeltaTimeF()
-        // only ticks in Play mode, so in edit mode it always reads 0 and the
-        // sim's dt > 0 guard would no-op forever.
+        // Measure the editor frame delta here: Deki::Time::GetDeltaTimeF()
+        // only ticks in Play mode, so in edit mode it reads 0 and the
+        // simulation's dt > 0 guard would never let it run.
         auto now = std::chrono::steady_clock::now();
         auto& last = m_LastTick[emitter];
         float dtSeconds = 0.0f;
@@ -89,7 +84,7 @@ public:
         }
         last = now;
 
-        // Single-frame Step request fires once even when paused.
+        // A Step request runs one frame, even when paused.
         if (m_StepRequested.count(emitter))
         {
             m_StepRequested.erase(emitter);
@@ -115,9 +110,9 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Gizmo: visualize the emission shape in the scene view.
-    // OnDrawGizmosSelected fires only when the emitter's owning object is
-    // selected — same convention as Unity's "show shape only when selected".
+    // Gizmo: the emission shape in the scene view. OnDrawGizmosSelected fires
+    // only when the emitter's object is selected, like Unity's "show shape
+    // only when selected".
     // -------------------------------------------------------------------
     void OnDrawGizmosSelected(Deki::Component* comp) override
     {
@@ -137,9 +132,9 @@ public:
 
         const float cx = view.GetScreenX();
         const float cy = view.GetScreenY();
-        // Crosshair: fixed-screen accent — scales with editor wheel zoom only.
-        // Shape extents (radius/width/height): world meters — scale by
-        // GetWorldToScreenScale so they match the rendered emission area.
+        // The crosshair has a fixed screen size and scales with the editor
+        // zoom only. Shape extents (radius, width, height) are world meters,
+        // scaled by GetWorldToScreenScale to match the rendered emission area.
         const float zoom = view.GetZoom();
         const float worldToPx = view.GetWorldToScreenScale();
         const uint32_t color = SceneView::Rgba(255, 200, 60, 220);
@@ -198,16 +193,15 @@ private:
         ui.TextDisabled("Preview");
         ui.Space();
 
-        // An emitter with no graph has no chain and will never spawn. Say so
-        // here rather than leaving the user staring at a transport that does
-        // nothing.
+        // An emitter with no graph has no chain and never spawns. Say so,
+        // rather than show preview controls that do nothing.
         if (!emitter->graph.Get())
         {
             ui.TextDisabled("Assign a Particle Effect graph to see particles.");
             return;
         }
 
-        // Auto-width buttons so the larger Lucide glyphs fit without truncation.
+        // Auto-width buttons, so the icon glyphs fit without truncation.
         const bool playing = emitter->IsEditorPreviewPlaying();
         const char* playLabel = playing ? ICON_TI_PLAYER_PAUSE " Pause" : ICON_TI_PLAYER_PLAY " Play";
         if (ui.Button(playLabel))
@@ -233,7 +227,8 @@ private:
                       emitter->pool.Capacity());
         ui.TextDisabled(aliveBuf);
 
-        // Editor-only preview speed (not document state) -> low-level, no undo.
+        // Preview speed is editor state, not part of the document, so it is
+        // set directly, without undo.
         float& speed = m_State[emitter].speed;
         ui.PropertyRow("Speed");
         ui.SliderFloat("##preview_speed", &speed, 0.0f, 4.0f, "%.2fx");

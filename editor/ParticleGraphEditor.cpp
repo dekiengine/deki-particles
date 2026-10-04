@@ -1,14 +1,11 @@
-/**
- * @file ParticleGraphEditor.cpp
- * @brief Editor-side registration for the ParticleGraph effect asset.
- *
- * Registers (a) the asset type so the Asset Browser's Create... menu offers
- * "Particle Effect" with a valid starting graph, and (b) the node-graph domain
- * so the generic Node Graph window claims this asset type and scopes its
- * add-node menu to the "Particles" node categories (see ParticleNodes.h).
- * Compilation needs no code here: the type has a runtime loader, so the
- * generic data-asset path transcodes the JSON to a MessagePack cache.
- */
+// Editor registration for the ParticleGraph effect asset:
+// (a) the asset type, so the Asset Browser's Create... menu offers "Particle
+//     Effect" with a valid starting graph;
+// (b) the node-graph domain, so the generic Node Graph window opens this
+//     asset type and limits its add-node menu to the "Particles" categories
+//     (see ParticleNodes.h).
+// Compiling needs no code here: the type has a runtime loader, so the generic
+// data-asset path converts the JSON to a MessagePack cache.
 
 #ifdef DEKI_EDITOR
 
@@ -30,9 +27,9 @@ public:
     const char* GetDisplayName() const override { return "Particle Effect"; }
     const char* GetExtension() const override { return ".asset"; }
 
-    // A new effect starts as the permanent Emitter node wired to an Emission
-    // node, which is the smallest graph that actually produces particles. An
-    // effect with no emission would spawn nothing and look broken on creation.
+    // A new effect starts as the Emitter node wired to an Emission node, the
+    // smallest graph that produces particles. Without emission a new effect
+    // would spawn nothing and look broken.
     const char* GetDefaultContent() const override
     {
         return R"({
@@ -66,14 +63,12 @@ DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticlesGizmoOps();
 REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(kParticleDomain, "ParticleGraph", "Particle Effect", "Particles",
                                           "ParticleEmit", DekiParticlesPreviewOps(), DekiParticlesGizmoOps());
 
-// Re-registration hook for plugin-only hot reload: the editor wipes the domain
-// registry while this DLL stays loaded, so the static registrar above never
-// reruns. Registry Register() dedupes, so calling this repeatedly is safe.
-// Invoked from DekiParticlesRegisterGraphTypes (DekiParticlesPackage.cpp).
-// The exports below are C symbols at global scope; the package's own
-// registration helpers and statics live in its namespace.
 using namespace DekiEditor;
 
+// Registers the domain again after a plugin-only hot reload, which clears the
+// domain registry while this DLL stays loaded, so the static registrar above
+// does not run again. Register() skips duplicates, so repeating is safe.
+// Called from DekiParticlesRegisterGraphTypes (DekiParticlesPackage.cpp).
 extern "C" void DekiParticlesRegisterEditorGraphDomain(void)
 {
     DekiNodeGraph::NodeGraphDomainRegistry::Instance().Register(&kParticleDomain);

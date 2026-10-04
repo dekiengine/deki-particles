@@ -11,11 +11,11 @@
 namespace DekiParticles
 {
 
-// Runtime loader for the ParticleGraph effect asset. Mirrors the plain
-// data-asset loaders: the editor compiles the ".asset" JSON to a MessagePack
-// cache via the generic path, and here we parse that cache with the generic
-// DekiNodeGraph::NodeGraphData loader (which creates the node instances via DekiNodeGraph::NodeFactory).
-// Same path on desktop and device. A malformed graph loads as nullptr, loudly.
+// Runtime loader for the ParticleGraph effect asset, like the plain data-asset
+// loaders: the editor compiles the ".asset" JSON to a MessagePack cache, and
+// this parses it with the generic DekiNodeGraph::NodeGraphData loader, which
+// creates the node instances through DekiNodeGraph::NodeFactory. The same on
+// desktop and device. A malformed graph logs an error and loads as nullptr.
 
 namespace
 {

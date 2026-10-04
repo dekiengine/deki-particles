@@ -8,7 +8,7 @@
 #include <deki/LogSystem.h>
 #include <deki/assets/Texture2D.h>
 #include "deki-rendering/QuadBlit.h"
-#include <deki/Engine.h>  // for DekiColorFormat enum
+#include <deki/Engine.h>  // Deki::ColorFormat
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -50,11 +50,11 @@ void ParticleEmitterComponent::EnsureReady()
 
     if (!RebuildChain())
     {
-        return;  // No graph loaded yet — try again next tick.
+        return;  // no graph loaded yet; try again next tick
     }
 
-    // Give every modifier a chance to allocate its private state and request
-    // pool extension columns now that capacity is known.
+    // Now that the capacity is known, let every modifier set up its private
+    // state and request extra pool columns.
     for (const ParticleChainEntry& e : m_Chain)
     {
         if (e.ops->onAttach)
@@ -87,7 +87,7 @@ bool ParticleEmitterComponent::RebuildChain()
     ParticleGraph* g = graph.Get();
     if (!g || !g->data)
     {
-        return false;  // Not loaded yet. Not an error: assets resolve later.
+        return false;  // not loaded yet, which is fine: assets resolve later
     }
 
     const char* error = nullptr;
@@ -129,7 +129,7 @@ int ParticleEmitterComponent::Spawn()
         return -1;
     }
 
-    // Reset particle state for this slot. All numeric state is float.
+    // Reset this slot's state. All numeric state is float.
     pool.posX[idx] = 0.0f;
     pool.posY[idx] = 0.0f;
     pool.velX[idx] = 0.0f;
@@ -153,9 +153,9 @@ int ParticleEmitterComponent::Spawn()
         pool.tintA[idx] = 255;
     }
 
-    // Drive onEmit through every ENABLED modifier in chain order. The
-    // Emission node is the typical caller; the spawn-time setters wired after
-    // it read the lifetime it set and write initial pos/vel/rot.
+    // Run onEmit on every enabled modifier in chain order. The Emission node
+    // is the usual caller; the spawn-time setters wired after it read the
+    // lifetime it set and write the initial position, velocity and rotation.
     for (const ParticleChainEntry& e : m_Chain)
     {
         if (!e.ops->onEmit)
@@ -180,9 +180,8 @@ void ParticleEmitterComponent::Update()
 
 void ParticleEmitterComponent::Simulate(float dt)
 {
-    // Self-bootstrap so the editor preview path works without Start() ever
-    // having fired (Play mode is the only context where the engine drives
-    // the lifecycle).
+    // Set up here too, so the editor preview works without Start(); the engine
+    // drives the lifecycle only in Play mode.
     EnsureReady();
 
     if (m_Chain.empty())
@@ -196,12 +195,12 @@ void ParticleEmitterComponent::Simulate(float dt)
     }
     if (dt > 0.1f)
     {
-        dt = 0.1f;  // Clamp huge deltas (loading, paused, etc.) to avoid teleport.
+        dt = 0.1f;  // clamp huge deltas (loading, paused...) so particles do not jump
     }
 
-    // Age + kill expired particles BEFORE driving simulation hooks. This way
-    // OnSimulate iterates only currently-alive particles. age/lifetime are
-    // float; convert dt once before the loop.
+    // Age and kill expired particles before the simulation hooks, so
+    // OnSimulate visits only live particles. age and lifetime are float;
+    // convert dt once before the loop.
     float dtN = static_cast<float>(dt);
     int n = pool.AliveCount();
     for (int i = 0; i < n;)
@@ -229,17 +228,15 @@ void ParticleEmitterComponent::Simulate(float dt)
         e.ops->onSimulate(e.data, e.state, *this, dt);
     }
 
-    // Final kinematic integration (pos += vel * dt) — runs once after all
-    // force modifiers have mutated velocity. Always happens, even with no
-    // modifiers attached, so that a programmatic Spawn() with non-zero
-    // velocity still moves.
+    // Integrate (pos += vel * dt) once, after every force modifier has changed
+    // velocity. Always runs, even with no modifiers, so a particle from a
+    // programmatic Spawn() with a velocity still moves.
     int alive = pool.AliveCount();
     float* px = pool.posX.Data();
     float* py = pool.posY.Data();
     float* vx = pool.velX.Data();
     float* vy = pool.velY.Data();
-    // dtN was already converted from `dt` earlier in this function for the
-    // age-aging loop — reuse it here instead of redefining.
+    // dtN is the dt converted for the ageing loop above.
     for (int i = 0; i < alive; ++i)
     {
         px[i] = ((px[i]) + (((vx[i]) * (dtN))));
@@ -250,20 +247,20 @@ void ParticleEmitterComponent::Simulate(float dt)
 #ifdef DEKI_EDITOR
 void ParticleEmitterComponent::EditorPreviewRestart()
 {
-    // Wipe live particles. We don't free the pool — capacity stays so the
-    // user's previewed particle count survives across restarts.
+    // Kill the live particles but keep the pool, so its capacity survives
+    // restarts.
     if (m_PoolAllocated)
     {
-        // Drain to zero alive without touching column pointers.
+        // Drain to zero without touching the column pointers.
         while (pool.AliveCount() > 0)
         {
             pool.KillSwap(pool.AliveCount() - 1);
         }
     }
-    // Rebuild the chain from the currently loaded graph, so every modifier's
-    // state blob starts over (the burst latch, the rate accumulator) and a
-    // reimported graph asset takes effect. Clearing the attach flag makes
-    // EnsureReady re-run the whole pass.
+    // Rebuild the chain from the loaded graph, so every modifier's state blob
+    // starts over (the burst latch, the rate accumulator) and a reimported
+    // graph takes effect. Clearing the attach flag makes EnsureReady run the
+    // whole pass again.
     m_ChainAttached = false;
     m_LoggedBadGraph = false;
     EnsureReady();
@@ -275,7 +272,7 @@ void ParticleEmitterComponent::UnloadAssets()
     sprite.ptr = nullptr;
     sprite.loadAttempted = false;
 
-    // The chain points INTO the graph asset's node instances, so it cannot
+    // The chain points into the graph asset's node instances, so it must not
     // outlive the asset. Drop it before releasing the reference.
     FreeChain();
     m_ChainAttached = false;
@@ -306,9 +303,9 @@ inline float SpritePpm(const Deki2D::Sprite* spr)
 
 void ParticleEmitterComponent::AnchorFor(const Deki::Object* owner, float& anchorX, float& anchorY) const
 {
-    // worldSpace=true: particles store world coords; subtract the emitter's
-    // world origin so the composite sits at the emitter after the final
-    // transform. worldSpace=false: particles are emitter-local already.
+    // worldSpace true: particles store world coordinates; subtract the
+    // emitter's world origin so the composite sits at the emitter after the
+    // final transform. worldSpace false: particles are already emitter-local.
     anchorX = 0.0f;
     anchorY = 0.0f;
     if (worldSpace && owner)
@@ -329,7 +326,7 @@ bool ParticleEmitterComponent::ComputeBounds(const Deki2D::Sprite* spr, float an
     const float ppm = SpritePpm(spr);
     const float spriteW = static_cast<float>(spr->width);
     const float spriteH = static_cast<float>(spr->height);
-    // Rotation expands the box up to sqrt(2). 1.45 leaves a one-pixel guard band.
+    // Rotation grows the box by up to sqrt(2); 1.45 leaves a one-pixel margin.
     constexpr float kRotPad = 1.45f;
     const bool hasScale = pool.HasScale();
     const float* px = pool.posX.Data();
@@ -376,12 +373,12 @@ bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeig
     const Deki2D::Sprite* spr = sprite.Get();
     if (!spr || !spr->data)
     {
-        return false;  // RenderContent logs the missing sprite; let it run
+        return false;  // RenderContent logs the missing sprite, so let it run
     }
 
     if (pool.AliveCount() <= 0)
     {
-        outWidth = outHeight = 0.0f;  // nothing to draw: cull the RenderContent call too
+        outWidth = outHeight = 0.0f;  // nothing to draw: skip the RenderContent call too
         return true;
     }
 
@@ -394,7 +391,7 @@ bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeig
         return true;
     }
     // The renderer assumes the content lies within one full extent of the
-    // origin in every direction; the box is not centred on the emitter, so
+    // origin in every direction. The box is not centred on the emitter, so
     // report the farther edge on each axis.
     const float reachX = static_cast<float>(std::max(std::abs(b.minX), std::abs(b.maxX)));
     const float reachY = static_cast<float>(std::max(std::abs(b.minY), std::abs(b.maxY)));
@@ -438,11 +435,11 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
     const int bboxH = b.maxY - b.minY;
     const float ppm = b.ppm;
 
-    // RGB565A8 intermediate (3 bytes/pixel: [lo, hi, alpha]). It is the one
-    // QuadBlit target that keeps coverage alpha (ARGB8888 targets write alpha
-    // 0xFF on every touched pixel, so a soft particle edge came out opaque),
-    // it is a quarter smaller than ARGB8888, and the final composite onto an
-    // RGB565 framebuffer takes QuadBlit's RGB565A8 fast paths.
+    // RGB565A8 composite (3 bytes/pixel: [lo, hi, alpha]). It is the one
+    // QuadBlit target that keeps coverage alpha (an ARGB8888 target writes
+    // alpha 0xFF on every touched pixel, which would make soft particle edges
+    // opaque). It is also a quarter smaller than ARGB8888, and the final
+    // composite onto an RGB565 framebuffer takes QuadBlit's RGB565A8 fast paths.
     const int bytesPerPixel = 3;
     const int needBytes = bboxW * bboxH * bytesPerPixel;
     if (needBytes > m_BboxBufBytes)
@@ -458,10 +455,10 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
                          bboxW, bboxH, needBytes);
         return false;
     }
-    // memset to 0 → alpha=0 (fully transparent) regardless of byte order.
+    // Zero bytes mean alpha 0 (fully transparent), whatever the byte order.
     std::memset(m_BboxBuf, 0, needBytes);
 
-    // Source descriptor for the sprite — same for every particle blit.
+    // The sprite's source, the same for every particle blit.
     const bool isRGB565 = (spr->format == Deki::Texture2D::TextureFormat::RGB565 ||
                            spr->format == Deki::Texture2D::TextureFormat::RGB565A8);
     const int srcBpp = Deki::Texture2D::GetBytesPerPixel(spr->format);
@@ -481,10 +478,9 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
         src.chromaRowSpans = spr->chromaRowSpans.Data();
     }
 
-    // Per-particle blit into the composite. Its clip stack is independent of
-    // the framebuffer's; disable clip enforcement for this nested render so
-    // scene clips don't suppress particles inside the composite (the final
-    // blit is clipped as one sprite).
+    // Blit each particle into the composite with clipping off, so scene clips
+    // do not hide particles inside the composite. The final blit is clipped
+    // as one sprite.
     const bool prevClipEnabled = QuadBlit::IsClipEnabled();
     QuadBlit::SetClipEnabled(false);
 
@@ -502,7 +498,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
         const float lx = (px[i] - anchorX) * ppm - static_cast<float>(b.minX);
         const float ly = (py[i] - anchorY) * ppm - static_cast<float>(b.minY);
         const float s = hasScale ? ps[i] : 1.0f;
-        const float r = hasRotation ? pr[i] : 0.0f;  // radians; Blit takes 0 through the scaled path
+        const float r = hasRotation ? pr[i] : 0.0f;  // radians; Blit sends 0 through the scaled path
         uint8_t tR = 255, tG = 255, tB = 255, tA = 255;
         if (hasTint)
         {
@@ -522,14 +518,14 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
 
     QuadBlit::SetClipEnabled(prevClipEnabled);
 
-    // Hand the composite back to the framework. We keep m_BboxBuf for next
-    // frame, so ownsPixels=false. Its pixels are at the sprite's scale.
+    // Hand the composite to the renderer. m_BboxBuf is kept for next frame,
+    // so ownsPixels is false. Its pixels are at the sprite's scale.
     outSource = QuadBlit::MakeSource(m_BboxBuf, bboxW, bboxH,
                                      QuadBlit::PixelLayout::RGB565A8(),  // the composite is built as RGB565A8
                                      /*ownsPixels=*/false);
     outSource.pixelsPerMeter = ppm;
 
-    // Pivot is the emitter's local origin within the box.
+    // The pivot is the emitter's local origin within the box.
     outPivotX = -static_cast<float>(b.minX) / static_cast<float>(bboxW);
     outPivotY = -static_cast<float>(b.minY) / static_cast<float>(bboxH);
     return true;
