@@ -45,7 +45,6 @@ namespace DekiParticles
 /// exactly.
 DEKI_CATEGORY("Particles")
 DEKI_DESCRIPTION("Spawns and draws particles, following a particle graph asset.")
-DEKI_FORMER_NAME("ParticleEmitterComponent")
 class DEKI_PARTICLES_API ParticleEmitterComponent : public DekiRendering::RendererComponent
 {
 public:
