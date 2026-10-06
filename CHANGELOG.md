@@ -8,6 +8,14 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
+## Unreleased
+
+### Added
+- `seed` on the Particle Emitter. 0 gives a different pattern each run, as before; any other value plays the same pattern every time, so renders of the effect can be compared.
+
+### Fixed
+- Particles are drawn the right way up. A particle that moved up in the world was drawn moving down, so a fountain sprayed toward the ground.
+
 ## 0.18.0
 
 ### Changed

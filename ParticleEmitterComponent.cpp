@@ -53,6 +53,11 @@ void ParticleEmitterComponent::EnsureReady()
         return;  // no graph loaded yet; try again next tick
     }
 
+    if (seed != 0)
+    {
+        rng.Seed(static_cast<uint32_t>(seed));
+    }
+
     // Now that the capacity is known, let every modifier set up its private
     // state and request extra pool columns.
     for (const ParticleChainEntry& e : m_Chain)
@@ -299,6 +304,13 @@ inline float SpritePpm(const Deki2D::Sprite* spr)
 {
     return (spr && spr->pixelsPerMeter > 0.0f) ? spr->pixelsPerMeter : 1.0f;
 }
+
+// A particle's composite row offset from the emitter, in pixels. World Y
+// points up and composite rows go down, so a higher particle gets a lower row.
+inline float CompositeY(float worldY, float anchorY, float ppm)
+{
+    return (anchorY - worldY) * ppm;
+}
 }  // namespace
 
 void ParticleEmitterComponent::AnchorFor(const Deki::Object* owner, float& anchorX, float& anchorY) const
@@ -338,7 +350,7 @@ bool ParticleEmitterComponent::ComputeBounds(const Deki2D::Sprite* spr, float an
     for (int i = 0; i < n; ++i)
     {
         const float lx = (px[i] - anchorX) * ppm;  // metres -> composite pixels
-        const float ly = (py[i] - anchorY) * ppm;
+        const float ly = CompositeY(py[i], anchorY, ppm);
         const float s = hasScale ? ps[i] : 1.0f;
         const float halfW = 0.5f * spriteW * s * kRotPad;
         const float halfH = 0.5f * spriteH * s * kRotPad;
@@ -496,7 +508,7 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
     {
         // Metres -> composite pixels, relative to the box origin.
         const float lx = (px[i] - anchorX) * ppm - static_cast<float>(b.minX);
-        const float ly = (py[i] - anchorY) * ppm - static_cast<float>(b.minY);
+        const float ly = CompositeY(py[i], anchorY, ppm) - static_cast<float>(b.minY);
         const float s = hasScale ? ps[i] : 1.0f;
         const float r = hasRotation ? pr[i] : 0.0f;  // radians; Blit sends 0 through the scaled path
         uint8_t tR = 255, tG = 255, tB = 255, tA = 255;

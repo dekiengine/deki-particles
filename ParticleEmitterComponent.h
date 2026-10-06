@@ -79,6 +79,12 @@ public:
                  "flame carried by a character and not smoke left behind one.")
     bool worldSpace = true;
 
+    DEKI_EXPORT
+    DEKI_TOOLTIP("Random seed. 0 gives a different pattern each run; any other value plays the same pattern every "
+                 "time, which a render test can compare.")
+    DEKI_RANGE(0, 2147483647)
+    int32_t seed = 0;
+
     ParticleEmitterComponent();
     virtual ~ParticleEmitterComponent();
 
