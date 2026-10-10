@@ -14,6 +14,12 @@ alongside one that has them.
 - `seed` on the Particle Emitter. 0 gives a different pattern each run, as before; any other value plays the same pattern every time, so renders of the effect can be compared.
 
 ### Fixed
+- **Effects play on a device.** The effect asset's loader and the built-in
+  modifiers registered themselves from static objects in files nothing else
+  referenced, and a firmware links the game from an archive, so the linker
+  dropped them: every emitter had no effect to play and drew nothing, with no
+  error. They are registered by `DekiParticlesInitSystem()` now
+  (`PACKAGE_HAS_SYSTEM_INIT`), as deki-fsm does.
 - Particles are drawn the right way up. A particle that moved up in the world was drawn moving down, so a fountain sprayed toward the ground.
 
 ## 0.18.0

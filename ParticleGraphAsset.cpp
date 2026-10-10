@@ -33,30 +33,27 @@ ParticleGraph* LoadGraphFromMemory(const uint8_t* data, size_t size)
     return graph;
 }
 
-struct ParticleGraphLoaderReg
-{
-    ParticleGraphLoaderReg()
-    {
-        // Through the engine's filesystem: the path is a virtual one on a
-        // device (F:/assets/..., S:/...), which a std::ifstream cannot open.
-        auto pathLoader = [](const char* p) -> void*
-        {
-            // External, not a std::vector on the internal heap: the file
-            // is only held while it is parsed.
-            Deki::Buffer<uint8_t> buf;
-            if (!Deki::AssetManager::ReadWholeFile(p, buf, Deki::Memory::External))
-            {
-                return nullptr;
-            }
-            return LoadGraphFromMemory(buf.Data(), buf.Count());
-        };
-        auto unloader = [](void* a) { delete static_cast<ParticleGraph*>(a); };
-        auto memLoader = [](const uint8_t* d, size_t n) -> void* { return LoadGraphFromMemory(d, n); };
-
-        Deki::AssetManager::RegisterLoader("ParticleGraph", pathLoader, unloader, memLoader);
-    }
-};
-static ParticleGraphLoaderReg s_ParticleGraphLoaderReg;
 }  // namespace
+
+void RegisterGraphLoader()
+{
+    // Through the engine's filesystem: the path is a virtual one on a
+    // device (F:/assets/..., S:/...), which a std::ifstream cannot open.
+    auto pathLoader = [](const char* p) -> void*
+    {
+        // External, not a std::vector on the internal heap: the file
+        // is only held while it is parsed.
+        Deki::Buffer<uint8_t> buf;
+        if (!Deki::AssetManager::ReadWholeFile(p, buf, Deki::Memory::External))
+        {
+            return nullptr;
+        }
+        return LoadGraphFromMemory(buf.Data(), buf.Count());
+    };
+    auto unloader = [](void* a) { delete static_cast<ParticleGraph*>(a); };
+    auto memLoader = [](const uint8_t* d, size_t n) -> void* { return LoadGraphFromMemory(d, n); };
+
+    Deki::AssetManager::RegisterLoader("ParticleGraph", pathLoader, unloader, memLoader);
+}
 
 }  // namespace DekiParticles

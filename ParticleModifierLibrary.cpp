@@ -359,92 +359,74 @@ void RotationOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmi
 }  // namespace
 
 // ---------------------------------------------------------------------------
-// Registration
+// Registration (typeId = hash of the node name, as the graph loader stores it)
+//
+// Called from DekiParticlesInitSystem, not done by REGISTER_PARTICLE_MODIFIER
+// statics: a firmware links the game from an archive, and the linker drops an
+// object nothing references, registrars and all, which left every modifier
+// without runtime ops on a device, so no effect could be built.
 // ---------------------------------------------------------------------------
 
-REGISTER_PARTICLE_MODIFIER(ParticleEmissionNode, (
-                                                     []
-                                                     {
-                                                         ParticleModifierOps ops;
-                                                         ops.stateSize = sizeof(EmissionState);
-                                                         ops.onAttach = &EmissionAttach;
-                                                         ops.onEmit = &EmissionEmit;
-                                                         ops.onSimulate = &EmissionSimulate;
-                                                         ops.isEnabled = &NodeEnabled<ParticleEmissionNode>;
-                                                         return ops;
-                                                     }()));
+namespace
+{
+template <typename Node>
+void Add(ParticleModifierOps ops)
+{
+    ops.isEnabled = &NodeEnabled<Node>;
+    ParticleModifierRegistry::Instance().Register(::Deki::HashString(Node::StaticNodeName), ops);
+}
+}  // namespace
 
-REGISTER_PARTICLE_MODIFIER(ParticleInitialVelocityNode, (
-                                                            []
-                                                            {
-                                                                ParticleModifierOps ops;
-                                                                ops.onEmit = &InitialVelocityEmit;
-                                                                ops.isEnabled =
-                                                                    &NodeEnabled<ParticleInitialVelocityNode>;
-                                                                return ops;
-                                                            }()));
-
-REGISTER_PARTICLE_MODIFIER(ParticleInitialRotationNode, (
-                                                            []
-                                                            {
-                                                                ParticleModifierOps ops;
-                                                                ops.onAttach = &InitialRotationAttach;
-                                                                ops.onEmit = &InitialRotationEmit;
-                                                                ops.onSimulate = &InitialRotationSimulate;
-                                                                ops.isEnabled =
-                                                                    &NodeEnabled<ParticleInitialRotationNode>;
-                                                                return ops;
-                                                            }()));
-
-REGISTER_PARTICLE_MODIFIER(ParticleGravityNode, (
-                                                    []
-                                                    {
-                                                        ParticleModifierOps ops;
-                                                        ops.onSimulate = &GravitySimulate;
-                                                        ops.isEnabled = &NodeEnabled<ParticleGravityNode>;
-                                                        return ops;
-                                                    }()));
-
-REGISTER_PARTICLE_MODIFIER(ParticleDragNode, (
-                                                 []
-                                                 {
-                                                     ParticleModifierOps ops;
-                                                     ops.onSimulate = &DragSimulate;
-                                                     ops.isEnabled = &NodeEnabled<ParticleDragNode>;
-                                                     return ops;
-                                                 }()));
-
-REGISTER_PARTICLE_MODIFIER(ParticleSizeOverLifetimeNode, (
-                                                             []
-                                                             {
-                                                                 ParticleModifierOps ops;
-                                                                 ops.onAttach = &SizeOverLifetimeAttach;
-                                                                 ops.onSimulate = &SizeOverLifetimeSimulate;
-                                                                 ops.isEnabled =
-                                                                     &NodeEnabled<ParticleSizeOverLifetimeNode>;
-                                                                 return ops;
-                                                             }()));
-
-REGISTER_PARTICLE_MODIFIER(ParticleColorOverLifetimeNode, (
-                                                              []
-                                                              {
-                                                                  ParticleModifierOps ops;
-                                                                  ops.onAttach = &ColorOverLifetimeAttach;
-                                                                  ops.onSimulate = &ColorOverLifetimeSimulate;
-                                                                  ops.isEnabled =
-                                                                      &NodeEnabled<ParticleColorOverLifetimeNode>;
-                                                                  return ops;
-                                                              }()));
-
-REGISTER_PARTICLE_MODIFIER(ParticleRotationOverLifetimeNode, (
-                                                                 []
-                                                                 {
-                                                                     ParticleModifierOps ops;
-                                                                     ops.onAttach = &RotationOverLifetimeAttach;
-                                                                     ops.onSimulate = &RotationOverLifetimeSimulate;
-                                                                     ops.isEnabled =
-                                                                         &NodeEnabled<ParticleRotationOverLifetimeNode>;
-                                                                     return ops;
-                                                                 }()));
+void RegisterModifierLibrary()
+{
+    {
+        ParticleModifierOps ops;
+        ops.stateSize = sizeof(EmissionState);
+        ops.onAttach = &EmissionAttach;
+        ops.onEmit = &EmissionEmit;
+        ops.onSimulate = &EmissionSimulate;
+        Add<ParticleEmissionNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onEmit = &InitialVelocityEmit;
+        Add<ParticleInitialVelocityNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onAttach = &InitialRotationAttach;
+        ops.onEmit = &InitialRotationEmit;
+        ops.onSimulate = &InitialRotationSimulate;
+        Add<ParticleInitialRotationNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onSimulate = &GravitySimulate;
+        Add<ParticleGravityNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onSimulate = &DragSimulate;
+        Add<ParticleDragNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onAttach = &SizeOverLifetimeAttach;
+        ops.onSimulate = &SizeOverLifetimeSimulate;
+        Add<ParticleSizeOverLifetimeNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onAttach = &ColorOverLifetimeAttach;
+        ops.onSimulate = &ColorOverLifetimeSimulate;
+        Add<ParticleColorOverLifetimeNode>(ops);
+    }
+    {
+        ParticleModifierOps ops;
+        ops.onAttach = &RotationOverLifetimeAttach;
+        ops.onSimulate = &RotationOverLifetimeSimulate;
+        Add<ParticleRotationOverLifetimeNode>(ops);
+    }
+}
 
 }  // namespace DekiParticles

@@ -13,6 +13,7 @@
 #include <deki-editor/EditorRegistry.h>
 
 #include "deki-nodegraph/DekiNode.h"
+#include "ParticleGraph.h"
 
 // Editor extensions live in DekiEditor; the package's own types are in DekiParticles.
 using namespace DekiParticles;

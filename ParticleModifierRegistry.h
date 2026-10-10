@@ -75,7 +75,10 @@ private:
 
 // Registers runtime ops for a modifier node struct. Place it at file scope in
 // a .cpp, next to the callbacks. ClassName must be a DEKI_NODE type; the key
-// is the hash of its node name, as the graph loader stores it.
+// is the hash of its node name, as the graph loader stores it. In a firmware
+// the registrar runs only when something else in its .cpp is referenced: the
+// linker drops an object nothing uses. deki-particles' own modifiers are
+// registered by RegisterModifierLibrary() instead.
 #define REGISTER_PARTICLE_MODIFIER(ClassName, Ops)                                                                     \
     static struct ClassName##_ParticleModifierRegistrar                                                                \
     {                                                                                                                  \
@@ -84,5 +87,10 @@ private:
             ParticleModifierRegistry::Instance().Register(::Deki::HashString(ClassName::StaticNodeName), Ops);         \
         }                                                                                                              \
     } s_##ClassName##_ParticleModifierRegistrar
+
+/// Registers the runtime ops of deki-particles' built-in modifiers (Emission,
+/// Initial Velocity and Rotation, Gravity, Drag, Size, Color and Rotation over
+/// Lifetime). Safe to call more than once. Called from DekiParticlesInitSystem.
+void RegisterModifierLibrary();
 
 }  // namespace DekiParticles

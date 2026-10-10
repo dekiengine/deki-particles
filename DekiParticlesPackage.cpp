@@ -13,6 +13,7 @@
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include "ParticleSystem.h"
+#include "ParticlesInit.h"
 #include <deki/reflection/ComponentRegistry.h>
 #include <deki/reflection/ComponentFactory.h>
 #include "deki-nodegraph/DekiNode.h"  // DekiNodeGraph::NodeFactory + DekiNodeGraph::NodeTypeRegistry (editor)
@@ -101,6 +102,7 @@ extern "C"
 
     DEKI_PLUGIN_API int DekiPluginInit(void)
     {
+        DekiParticlesInitSystem();
         return 0;
     }
 

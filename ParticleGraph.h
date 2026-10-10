@@ -26,4 +26,9 @@ struct ParticleGraph
     ~ParticleGraph() { delete data; }
 };
 
+/// Registers the ParticleGraph asset loader. Safe to call more than once.
+/// Called from DekiParticlesInitSystem (ParticlesInit.h); that call is also
+/// what links ParticleGraphAsset.cpp into a firmware.
+void RegisterGraphLoader();
+
 }  // namespace DekiParticles
