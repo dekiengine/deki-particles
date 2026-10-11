@@ -8,7 +8,7 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
-## Unreleased
+## 0.18.2
 
 ### Added
 - `seed` on the Particle Emitter. 0 gives a different pattern each run, as before; any other value plays the same pattern every time, so renders of the effect can be compared.
