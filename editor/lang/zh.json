@@ -79,5 +79,7 @@
     "Rotation over Lifetime": "随生命周期变化的旋转",
     "Ramps a particle's spin rate as it ages.": "随粒子老化渐变其自转速度。",
     "Spin Speed At 0": "0 时的自转速度",
-    "Spin Speed At 1": "1 时的自转速度"
+    "Spin Speed At 1": "1 时的自转速度",
+    "Particles": "粒子",
+    "Spawns and draws particles, following a particle graph asset.": "按照粒子图资源生成并绘制粒子。"
 }

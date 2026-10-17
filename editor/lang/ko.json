@@ -79,5 +79,7 @@
     "Rotation over Lifetime": "수명에 따른 회전",
     "Ramps a particle's spin rate as it ages.": "파티클이 나이 들면서 회전 속도를 변화시킵니다.",
     "Spin Speed At 0": "시작 회전 속도",
-    "Spin Speed At 1": "종료 회전 속도"
+    "Spin Speed At 1": "종료 회전 속도",
+    "Particles": "파티클",
+    "Spawns and draws particles, following a particle graph asset.": "파티클 그래프 에셋에 따라 파티클을 생성하고 그립니다."
 }

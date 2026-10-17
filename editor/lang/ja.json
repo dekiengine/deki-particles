@@ -79,5 +79,7 @@
     "Rotation over Lifetime": "生存期間中の回転",
     "Ramps a particle's spin rate as it ages.": "時間が経つにつれてパーティクルの回転の速さを変化させます。",
     "Spin Speed At 0": "開始時の回転速度",
-    "Spin Speed At 1": "終了時の回転速度"
+    "Spin Speed At 1": "終了時の回転速度",
+    "Particles": "パーティクル",
+    "Spawns and draws particles, following a particle graph asset.": "パーティクルグラフのアセットに従って、パーティクルを生成して描きます。"
 }
