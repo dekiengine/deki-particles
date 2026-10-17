@@ -11,6 +11,7 @@
 
 #include <deki-editor/EditorExtension.h>
 #include <deki-editor/EditorRegistry.h>
+#include <deki-editor/Localization.h>
 
 #include "deki-nodegraph/DekiNode.h"
 #include "ParticleGraph.h"
@@ -25,7 +26,7 @@ class ParticleGraphAssetEditor : public AssetTypeEditor
 {
 public:
     const char* GetTypeName() const override { return "ParticleGraph"; }
-    const char* GetDisplayName() const override { return "Particle Effect"; }
+    const char* GetDisplayName() const override { return TrMark("Particle Effect"); }
     const char* GetExtension() const override { return ".asset"; }
 
     // A new effect starts as the Emitter node wired to an Emission node, the
@@ -61,8 +62,9 @@ DekiNodeGraph::NodeGraphPreviewOps DekiParticlesPreviewOps();
 // or ramp in the properties panel, under its title.
 DekiNodeGraph::NodeGraphNodeGizmoOps DekiParticlesGizmoOps();
 
-REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(kParticleDomain, "ParticleGraph", "Particle Effect", "Particles",
-                                          "ParticleEmit", DekiParticlesPreviewOps(), DekiParticlesGizmoOps());
+REGISTER_NODE_GRAPH_DOMAIN_PREVIEW_GIZMOS(kParticleDomain, "ParticleGraph", DekiEditor::TrMark("Particle Effect"),
+                                          "Particles", "ParticleEmit", DekiParticlesPreviewOps(),
+                                          DekiParticlesGizmoOps());
 
 using namespace DekiEditor;
 
