@@ -11,6 +11,11 @@
 #include "ParticleChain.h"
 #include <vector>
 
+namespace DekiRendering
+{
+struct RenderContext;
+}
+
 namespace DekiParticles
 {
 
@@ -32,12 +37,14 @@ namespace DekiParticles
 /// pixelsPerMeter, so when the camera runs at the sprite's ppm a particle has
 /// the size its art was authored at, and scale 1 means "as authored".
 ///
-/// Rendering: all live particles are drawn into one RGB565A8 buffer at the
-/// sprite's pixel scale, sized to their tight bounding box, and returned as one
-/// QuadBlit::Source with the sprite's pixelsPerMeter. The renderer blits it at
-/// the emitter's world transform, so sort order is per emitter, never per
-/// particle. GetContentExtents reports the same box, so an emitter whose
-/// particles are all off screen or clipped away does no work.
+/// Rendering: when the renderer reaches the emitter in sort order, the
+/// particle render pass (ParticleRenderPass, attached whenever this package
+/// is loaded) draws every live particle straight into the frame, one sprite
+/// blit each, placed by the emitter's world transform and the camera. Sort
+/// order is per emitter, never per particle. Each particle blends onto the
+/// scene like a sprite of its alpha: there is no intermediate composite,
+/// which used to apply a soft edge's alpha twice and darken it. GetContentExtents
+/// reports the particles' bounding box, for culling and the editor's outline.
 ///
 /// No fallbacks: with no sprite it draws nothing and logs once; with no graph
 /// no particles spawn; a graph naming a modifier type with no registered
@@ -95,8 +102,16 @@ public:
 
     bool GetContentExtents(float& outWidth, float& outHeight) const override;
 
+    /// Draws nothing: the particles are drawn by DrawParticles, not as one
+    /// piece of content.
     bool RenderContent(const Deki::Object* owner, QuadBlit::Source& outSource, float& outPivotX, float& outPivotY,
                        uint8_t& outTintR, uint8_t& outTintG, uint8_t& outTintB, uint8_t& outTintA) override;
+
+    /// Draws the live particles straight into ctx's target, each a blit of the
+    /// sprite placed by the emitter's world transform and the camera, under
+    /// the current clip (unless ignoreClip). Called by the particle render
+    /// pass when the renderer reaches this emitter.
+    void DrawParticles(const Deki::Object* owner, DekiRendering::RenderContext& ctx);
 
     // Public so modifiers' inner loops can use them directly, without accessors.
     DekiParticles::ParticlePool pool;
@@ -150,16 +165,10 @@ private:
     bool m_EditorPreviewPlaying = false;
 #endif
 
-    // Composite buffer kept between frames. It grows to fit and never shrinks,
-    // so a size that jitters does not reallocate.
-    uint8_t* m_BboxBuf = nullptr;
-    int m_BboxBufBytes = 0;
-
     // The built chain, in wire order.
     std::vector<ParticleChainEntry> m_Chain;
 
     void EnsurePoolAllocated();
-    void FreeBboxBuf();
     void FreeChain();
 
     // Tight bounding box of the live particles in composite pixels (the

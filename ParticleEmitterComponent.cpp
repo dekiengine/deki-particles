@@ -8,6 +8,9 @@
 #include <deki/LogSystem.h>
 #include <deki/assets/Texture2D.h>
 #include "deki-rendering/QuadBlit.h"
+#include "deki-rendering/DekiRenderer.h"
+#include "deki-rendering/DekiRenderPassRegistry.h"
+#include "deki-rendering/RenderPass.h"
 #include <deki/Engine.h>  // Deki::ColorFormat
 #include <algorithm>
 #include <cmath>
@@ -26,7 +29,6 @@ ParticleEmitterComponent::ParticleEmitterComponent()
 ParticleEmitterComponent::~ParticleEmitterComponent()
 {
     ParticleSystem::GetInstance().UnregisterEmitter(this);
-    FreeBboxBuf();
     FreeChain();
 }
 
@@ -284,16 +286,8 @@ void ParticleEmitterComponent::UnloadAssets()
     graph.ptr = nullptr;
     graph.loadAttempted = false;
 
-    FreeBboxBuf();
     m_LoggedMissingSprite = false;
     m_LoggedBadGraph = false;
-}
-
-void ParticleEmitterComponent::FreeBboxBuf()
-{
-    Deki::Memory::Free(m_BboxBuf);
-    m_BboxBuf = nullptr;
-    m_BboxBufBytes = 0;
 }
 
 namespace
@@ -385,7 +379,7 @@ bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeig
     const Deki2D::Sprite* spr = sprite.Get();
     if (!spr || !spr->data)
     {
-        return false;  // RenderContent logs the missing sprite, so let it run
+        return false;  // DrawParticles logs the missing sprite
     }
 
     if (pool.AliveCount() <= 0)
@@ -412,12 +406,14 @@ bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeig
     return true;
 }
 
-bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit::Source& outSource, float& outPivotX,
-                                             float& outPivotY, uint8_t& outTintR, uint8_t& outTintG, uint8_t& outTintB,
-                                             uint8_t& outTintA)
+bool ParticleEmitterComponent::RenderContent(const Deki::Object*, QuadBlit::Source&, float&, float&, uint8_t&,
+                                             uint8_t&, uint8_t&, uint8_t&)
 {
-    outTintR = outTintG = outTintB = outTintA = 255;
+    return false;
+}
 
+void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRendering::RenderContext& ctx)
+{
     Deki2D::Sprite* spr = sprite.Get();
     if (!spr || !spr->data)
     {
@@ -426,54 +422,17 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
             DEKI_LOG_ERROR("ParticleEmitterComponent: no sprite assigned — emitter renders nothing");
             m_LoggedMissingSprite = true;
         }
-        return false;
+        return;
     }
-
     const int n = pool.AliveCount();
-    if (n <= 0)
+    if (n <= 0 || !owner || !ctx.buffer || !ctx.cam.valid)
     {
-        return false;
+        return;
     }
 
-    float anchorX, anchorY;
-    AnchorFor(owner, anchorX, anchorY);
-
-    Bounds b;
-    if (!ComputeBounds(spr, anchorX, anchorY, b))
-    {
-        return false;
-    }
-    const int bboxW = b.maxX - b.minX;
-    const int bboxH = b.maxY - b.minY;
-    const float ppm = b.ppm;
-
-    // RGB565A8 composite (3 bytes/pixel: [lo, hi, alpha]). It is the one
-    // QuadBlit target that keeps coverage alpha (an ARGB8888 target writes
-    // alpha 0xFF on every touched pixel, which would make soft particle edges
-    // opaque). It is also a quarter smaller than ARGB8888, and the final
-    // composite onto an RGB565 framebuffer takes QuadBlit's RGB565A8 fast paths.
-    const int bytesPerPixel = 3;
-    const int needBytes = bboxW * bboxH * bytesPerPixel;
-    if (needBytes > m_BboxBufBytes)
-    {
-        Deki::Memory::Free(m_BboxBuf);
-        m_BboxBuf = Deki::Memory::AllocateArray<uint8_t>(static_cast<size_t>(needBytes), Deki::Memory::External);
-        m_BboxBufBytes = m_BboxBuf ? needBytes : 0;
-    }
-    if (!m_BboxBuf)
-    {
-        DEKI_LOG_WARNING("ParticleEmitter: no room for a %dx%d bbox (%d bytes); "
-                         "not drawing this emitter",
-                         bboxW, bboxH, needBytes);
-        return false;
-    }
-    // Zero bytes mean alpha 0 (fully transparent), whatever the byte order.
-    std::memset(m_BboxBuf, 0, needBytes);
-
-    // The sprite's source, the same for every particle blit.
+    // The sprite's source, the same for every particle.
     const bool isRGB565 = (spr->format == Deki::Texture2D::TextureFormat::RGB565 ||
                            spr->format == Deki::Texture2D::TextureFormat::RGB565A8);
-    const int srcBpp = Deki::Texture2D::GetBytesPerPixel(spr->format);
     QuadBlit::Source src = QuadBlit::MakeSource(spr->data, spr->width, spr->height,
                                                 QuadBlit::PixelLayout::FromTexture(spr->format, spr->hasAlpha),
                                                 /*ownsPixels=*/false, spr->alphaRowSpans.Data());
@@ -490,11 +449,39 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
         src.chromaRowSpans = spr->chromaRowSpans.Data();
     }
 
-    // Blit each particle into the composite with clipping off, so scene clips
-    // do not hide particles inside the composite. The final blit is clipped
-    // as one sprite.
-    const bool prevClipEnabled = QuadBlit::IsClipEnabled();
-    QuadBlit::SetClipEnabled(false);
+    // Worked out in the whole view, as the renderer's own draws are, and moved
+    // to the strip (ctx.viewTop) in whole pixels at the end.
+    DekiRendering::FrameCamera cam = ctx.cam;
+    cam.halfH += static_cast<float>(ctx.viewTop);
+    const int32_t viewTop = ctx.viewTop;
+
+    // A particle sits where the emitter's transform puts its offset from the
+    // anchor (the emitter's origin for world-space particles), scaled, then
+    // rotated, as a child object would be. Its sprite takes the emitter's
+    // scale and rotation on top of its own.
+    const Deki::WorldTransform wt = owner->GetWorldTransform();
+    float anchorX, anchorY;
+    AnchorFor(owner, anchorX, anchorY);
+    float originX, originY;
+    cam.WorldToScreen(wt.x, wt.y, originX, originY);
+    const float cosR = std::cos(wt.rotation);
+    const float sinR = std::sin(wt.rotation);
+    const float ppm = cam.ppm;
+    const float toSprite = ppm / SpritePpm(spr);  // screen pixels per sprite pixel at scale 1
+    const bool snap = pixelSnap || cam.snapStep > 0;
+    const bool dither = (alphaMode == DekiRendering::AlphaMode::OrderedDither);
+
+    // A particle wholly outside the target (a strip, often) is skipped before
+    // any blit work: its reach is the sprite's half diagonal at its scale.
+    const float halfDiagonal = 0.5f * std::sqrt(static_cast<float>(spr->width) * spr->width +
+                                                static_cast<float>(spr->height) * spr->height);
+    const float emitterScale = std::max(std::abs(wt.scaleX), std::abs(wt.scaleY));
+
+    const bool wasClipEnabled = QuadBlit::IsClipEnabled();
+    if (ignoreClip)
+    {
+        QuadBlit::SetClipEnabled(false);
+    }
 
     const bool hasScale = pool.HasScale();
     const bool hasRotation = pool.HasRotation();
@@ -506,11 +493,6 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
 
     for (int i = 0; i < n; ++i)
     {
-        // Metres -> composite pixels, relative to the box origin.
-        const float lx = (px[i] - anchorX) * ppm - static_cast<float>(b.minX);
-        const float ly = CompositeY(py[i], anchorY, ppm) - static_cast<float>(b.minY);
-        const float s = hasScale ? ps[i] : 1.0f;
-        const float r = hasRotation ? pr[i] : 0.0f;  // radians; Blit sends 0 through the scaled path
         uint8_t tR = 255, tG = 255, tB = 255, tA = 255;
         if (hasTint)
         {
@@ -523,24 +505,71 @@ bool ParticleEmitterComponent::RenderContent(const Deki::Object* owner, QuadBlit
                 continue;
             }
         }
+        const float s = hasScale ? ps[i] : 1.0f;
+        const float r = hasRotation ? pr[i] : 0.0f;
 
-        QuadBlit::Blit(src, m_BboxBuf, bboxW, bboxH, Deki::ColorFormat::RGB565A8, static_cast<int32_t>(lx),
-                       static_cast<int32_t>(ly), s, s, r, 0.5f, 0.5f, tR, tG, tB, tA);
+        const float ox = (px[i] - anchorX) * wt.scaleX;
+        const float oy = (py[i] - anchorY) * wt.scaleY;
+        float screenX = originX + (ox * cosR - oy * sinR) * ppm;
+        float screenY = originY - (ox * sinR + oy * cosR) * ppm;
+
+        const float reach = halfDiagonal * std::abs(s) * emitterScale * toSprite + 2.0f;
+        if (screenX + reach < 0.0f || screenX - reach > static_cast<float>(ctx.width) ||
+            screenY - static_cast<float>(viewTop) + reach < 0.0f ||
+            screenY - static_cast<float>(viewTop) - reach > static_cast<float>(ctx.height))
+        {
+            continue;
+        }
+
+        if (cam.snapStep > 0)
+        {
+            screenX = cam.SnapX(screenX);
+            screenY = cam.SnapY(screenY);
+        }
+        const int32_t ix = snap ? static_cast<int32_t>(std::lround(screenX)) : static_cast<int32_t>(screenX);
+        const int32_t iy =
+            (snap ? static_cast<int32_t>(std::lround(screenY)) : static_cast<int32_t>(screenY)) - viewTop;
+
+        QuadBlit::Blit(src, ctx.buffer, ctx.width, ctx.height, ctx.format, ix, iy, s * wt.scaleX * toSprite,
+                       s * wt.scaleY * toSprite, r + wt.rotation, 0.5f, 0.5f, tR, tG, tB, tA, dither);
     }
 
-    QuadBlit::SetClipEnabled(prevClipEnabled);
-
-    // Hand the composite to the renderer. m_BboxBuf is kept for next frame,
-    // so ownsPixels is false. Its pixels are at the sprite's scale.
-    outSource = QuadBlit::MakeSource(m_BboxBuf, bboxW, bboxH,
-                                     QuadBlit::PixelLayout::RGB565A8(),  // the composite is built as RGB565A8
-                                     /*ownsPixels=*/false);
-    outSource.pixelsPerMeter = ppm;
-
-    // The pivot is the emitter's local origin within the box.
-    outPivotX = -static_cast<float>(b.minX) / static_cast<float>(bboxW);
-    outPivotY = -static_cast<float>(b.minY) / static_cast<float>(bboxH);
-    return true;
+    if (ignoreClip)
+    {
+        QuadBlit::SetClipEnabled(wasClipEnabled);
+    }
 }
+
+// Draws each emitter's particles when the renderer reaches it in sort order.
+// Attached whenever this package is loaded (autoAttach), like the tilemap
+// pass, so no project has to name it in its render pipeline.
+class ParticleRenderPass : public DekiRendering::RenderPass
+{
+public:
+    static constexpr const char* kRegistryName = "particles";
+
+    uint32_t HookMask() const override { return DekiRendering::RenderPassHooks::Execute; }
+
+    void Execute(Deki::Object* obj, DekiRendering::RenderContext& ctx) override
+    {
+        if (auto* emitter = obj->GetComponent<ParticleEmitterComponent>())
+        {
+            emitter->DrawParticles(obj, ctx);
+        }
+    }
+};
+
+static struct ParticleRenderPassRegistrar
+{
+    ParticleRenderPassRegistrar()
+    {
+        DekiRendering::RenderPassInfo info;
+        info.factory = []() -> DekiRendering::RenderPass* { return new ParticleRenderPass(); };
+        info.autoAttach = true;
+        DekiRendering::DekiRenderPassRegistry::Register(ParticleRenderPass::kRegistryName, info);
+    }
+    // Required so the registry does not outlive this DLL's code.
+    ~ParticleRenderPassRegistrar() { DekiRendering::DekiRenderPassRegistry::Unregister(ParticleRenderPass::kRegistryName); }
+} s_ParticleRenderPassRegistrar;
 
 }  // namespace DekiParticles
