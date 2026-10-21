@@ -15,6 +15,7 @@
 #include <deki-editor/EditorUI.h>
 #include <deki-editor/SceneView.h>
 #include <deki-editor/IconsTabler.h>
+#include <deki-editor/Localization.h>
 #include "ParticleEmitterComponent.h"
 #include "ParticleNodes.h"
 #include <deki/Object.h>
@@ -190,40 +191,40 @@ private:
         auto& ui = EditorUI::Get();
         ui.Space();
         ui.Separator();
-        ui.TextDisabled("Preview");
+        ui.TextDisabled(Tr("Preview"));
         ui.Space();
 
         // An emitter with no graph has no chain and never spawns. Say so,
         // rather than show preview controls that do nothing.
         if (!emitter->graph.Get())
         {
-            ui.TextDisabled("Assign a Particle Effect graph to see particles.");
+            ui.TextDisabled(Tr("Assign a Particle Effect graph to see particles."));
             return;
         }
 
         // Auto-width buttons, so the icon glyphs fit without truncation.
         const bool playing = emitter->IsEditorPreviewPlaying();
-        const char* playLabel = playing ? ICON_TI_PLAYER_PAUSE " Pause" : ICON_TI_PLAYER_PLAY " Play";
-        if (ui.Button(playLabel))
+        const char* playLabel = playing ? TrMark(ICON_TI_PLAYER_PAUSE " Pause") : TrMark(ICON_TI_PLAYER_PLAY " Play");
+        if (ui.Button(TrLabel(playLabel)))
         {
             emitter->EditorPreviewSetPlaying(!playing);
         }
         ui.SameLine();
-        if (ui.Button(ICON_TI_PLAYER_SKIP_FORWARD " Step"))
+        if (ui.Button(TrLabel(ICON_TI_PLAYER_SKIP_FORWARD " Step")))
         {
             m_StepRequested[emitter] = true;
         }
         ui.SameLine();
         // Restart also rebuilds the chain, so it is how a reimported graph
         // reaches this preview.
-        if (ui.Button(ICON_TI_ROTATE " Restart"))
+        if (ui.Button(TrLabel(ICON_TI_ROTATE " Restart")))
         {
             emitter->EditorPreviewRestart();
         }
         ui.SameLine();
         ui.AlignTextToFramePadding();
         char aliveBuf[64];
-        std::snprintf(aliveBuf, sizeof(aliveBuf), "%d / %d alive", emitter->pool.AliveCount(),
+        std::snprintf(aliveBuf, sizeof(aliveBuf), Tr("%d / %d alive"), emitter->pool.AliveCount(),
                       emitter->pool.Capacity());
         ui.TextDisabled(aliveBuf);
 
