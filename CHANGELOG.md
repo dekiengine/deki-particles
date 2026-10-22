@@ -8,12 +8,6 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
-## Unreleased
-
-### Added
-- Particles draw in strips of columns too (`RenderContext::viewLeft`), as a
-  display shown turned asks for.
-
 ## 0.19.0
 
 ### Changed

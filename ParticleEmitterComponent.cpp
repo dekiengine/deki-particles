@@ -450,12 +450,10 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
     }
 
     // Worked out in the whole view, as the renderer's own draws are, and moved
-    // to the strip (ctx.viewTop, ctx.viewLeft) in whole pixels at the end.
+    // to the strip (ctx.viewTop) in whole pixels at the end.
     DekiRendering::FrameCamera cam = ctx.cam;
     cam.halfH += static_cast<float>(ctx.viewTop);
-    cam.halfW += static_cast<float>(ctx.viewLeft);
     const int32_t viewTop = ctx.viewTop;
-    const int32_t viewLeft = ctx.viewLeft;
 
     // A particle sits where the emitter's transform puts its offset from the
     // anchor (the emitter's origin for world-space particles), scaled, then
@@ -516,8 +514,7 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
         float screenY = originY - (ox * sinR + oy * cosR) * ppm;
 
         const float reach = halfDiagonal * std::abs(s) * emitterScale * toSprite + 2.0f;
-        if (screenX - static_cast<float>(viewLeft) + reach < 0.0f ||
-            screenX - static_cast<float>(viewLeft) - reach > static_cast<float>(ctx.width) ||
+        if (screenX + reach < 0.0f || screenX - reach > static_cast<float>(ctx.width) ||
             screenY - static_cast<float>(viewTop) + reach < 0.0f ||
             screenY - static_cast<float>(viewTop) - reach > static_cast<float>(ctx.height))
         {
@@ -529,8 +526,7 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
             screenX = cam.SnapX(screenX);
             screenY = cam.SnapY(screenY);
         }
-        const int32_t ix =
-            (snap ? static_cast<int32_t>(std::lround(screenX)) : static_cast<int32_t>(screenX)) - viewLeft;
+        const int32_t ix = snap ? static_cast<int32_t>(std::lround(screenX)) : static_cast<int32_t>(screenX);
         const int32_t iy =
             (snap ? static_cast<int32_t>(std::lround(screenY)) : static_cast<int32_t>(screenY)) - viewTop;
 
