@@ -406,8 +406,8 @@ bool ParticleEmitterComponent::GetContentExtents(float& outWidth, float& outHeig
     return true;
 }
 
-bool ParticleEmitterComponent::RenderContent(const Deki::Object*, QuadBlit::Source&, float&, float&, uint8_t&,
-                                             uint8_t&, uint8_t&, uint8_t&)
+bool ParticleEmitterComponent::RenderContent(const Deki::Object*, QuadBlit::Source&, float&, float&, uint8_t&, uint8_t&,
+                                             uint8_t&, uint8_t&)
 {
     return false;
 }
@@ -473,8 +473,8 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
 
     // A particle wholly outside the target (a strip, often) is skipped before
     // any blit work: its reach is the sprite's half diagonal at its scale.
-    const float halfDiagonal = 0.5f * std::sqrt(static_cast<float>(spr->width) * spr->width +
-                                                static_cast<float>(spr->height) * spr->height);
+    const float halfDiagonal =
+        0.5f * std::sqrt(static_cast<float>(spr->width) * spr->width + static_cast<float>(spr->height) * spr->height);
     const float emitterScale = std::max(std::abs(wt.scaleX), std::abs(wt.scaleY));
 
     const bool wasClipEnabled = QuadBlit::IsClipEnabled();
@@ -550,6 +550,11 @@ public:
 
     uint32_t HookMask() const override { return DekiRendering::RenderPassHooks::Execute; }
 
+    bool WantsObject(Deki::Object* obj) const override
+    {
+        return obj->GetComponent<ParticleEmitterComponent>() != nullptr;
+    }
+
     void Execute(Deki::Object* obj, DekiRendering::RenderContext& ctx) override
     {
         if (auto* emitter = obj->GetComponent<ParticleEmitterComponent>())
@@ -569,7 +574,10 @@ static struct ParticleRenderPassRegistrar
         DekiRendering::DekiRenderPassRegistry::Register(ParticleRenderPass::kRegistryName, info);
     }
     // Required so the registry does not outlive this DLL's code.
-    ~ParticleRenderPassRegistrar() { DekiRendering::DekiRenderPassRegistry::Unregister(ParticleRenderPass::kRegistryName); }
+    ~ParticleRenderPassRegistrar()
+    {
+        DekiRendering::DekiRenderPassRegistry::Unregister(ParticleRenderPass::kRegistryName);
+    }
 } s_ParticleRenderPassRegistrar;
 
 }  // namespace DekiParticles
