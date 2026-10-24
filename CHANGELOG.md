@@ -8,6 +8,13 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
+## 0.20.0
+
+### Changed
+- `minEngine` 0.20.0: built against engine 0.20.0. A build of this package from before does not load and is rebuilt.
+- Particles are drawn straight into the frame instead of through a composite, and in strips of rows or columns like everything else.
+- The particle pass runs in a strip only for the objects with an emitter (`RenderPass::WantsObject`).
+
 ## 0.19.0
 
 ### Changed
