@@ -56,7 +56,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">deki-particles<span id="projectnumber">&#160;0.19.0</span>
+   <div id="projectname">deki-particles<span id="projectnumber">&#160;0.20.2</span>
    </div>
    <div id="projectbrief">Deki package reference</div>
   </td>
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('index.html',''
 <img src="deki-particles.png" alt=""/>
 </div>
     <p>Modular particle emitter (gravity, drag, velocity, lifetime modifiers)</p>
-<p>Repository: <a href="https://github.com/dekiengine/deki-particles">github.com/dekiengine/deki-particles</a> · Latest release: 0.19.0 · Needs engine 0.19.0+ · Requires: <a href="https://dekiengine.github.io/deki-nodegraph/">deki-nodegraph</a>, <a href="https://dekiengine.github.io/deki-rendering/">deki-rendering</a>, <a href="https://dekiengine.github.io/deki-2d/">deki-2d</a></p>
+<p>Repository: <a href="https://github.com/dekiengine/deki-particles">github.com/dekiengine/deki-particles</a> · Latest release: 0.20.0 · Needs engine 0.20.0+ · Requires: <a href="https://dekiengine.github.io/deki-nodegraph/">deki-nodegraph</a>, <a href="https://dekiengine.github.io/deki-rendering/">deki-rendering</a>, <a href="https://dekiengine.github.io/deki-2d/">deki-2d</a></p>
 <p>Install with <span class="tt">DekiEditor --packages-add deki-particles &lt;project&gt;</span>, or from the Package Manager. The engine's own components and C++ API are in the <a href="https://dekiengine.github.io/docs/">Deki docs</a>.</p>
 <p>Shown in the editor as <b>Particles</b>.</p>
 <h1 class="doxsection"><a class="anchor" id="components"></a>
@@ -162,34 +162,30 @@ ParticleEmitterComponent</h2>
 <h1 class="doxsection"><a class="anchor" id="changelog"></a>
 Changelog</h1>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md0"></a>
-0.19.0</h2>
+0.20.0</h2>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md1"></a>
+Changed</h2>
+<ul>
+<li><span class="tt">minEngine</span> 0.20.0: built against engine 0.20.0. A build of this package from before does not load and is rebuilt.</li>
+<li>Particles are drawn straight into the frame instead of through a composite, and in strips of rows or columns like everything else.</li>
+<li>The particle pass runs in a strip only for the objects with an emitter (<span class="tt">RenderPass::WantsObject</span>).</li>
+</ul>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
+0.19.0</h2>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
 Changed</h2>
 <ul>
 <li><span class="tt">minEngine</span> 0.19.0: built against engine 0.19.0, whose component metadata records the package each class is in. A build of this package from before does not load and is rebuilt.</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
 Added</h2>
 <ul>
 <li>Japanese, Simplified Chinese and Korean: <span class="tt">editor/lang/ja.json</span>, <span class="tt">zh.json</span> and <span class="tt">ko.json</span> translate the names, tooltips and enum values this package's components show in the Inspector.</li>
 <li>The package's editor text goes through the editor's translation (<span class="tt">Tr</span>), so it shows in the editor's language. Needs the editor release that adds <span class="tt">Localization.h</span>; raise <span class="tt">minEngine</span> to it when releasing.</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
-0.18.2</h2>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
-Added</h2>
-<ul>
-<li><span class="tt">seed</span> on the Particle Emitter. 0 gives a different pattern each run, as before; any other value plays the same pattern every time, so renders of the effect can be compared.</li>
-</ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md5"></a>
-Fixed</h2>
-<ul>
-<li><b>Effects play on a device.</b> The effect asset's loader and the built-in modifiers registered themselves from static objects in files nothing else referenced, and a firmware links the game from an archive, so the linker dropped them: every emitter had no effect to play and drew nothing, with no error. They are registered by <span class="tt">DekiParticlesInitSystem()</span> now (<span class="tt">PACKAGE_HAS_SYSTEM_INIT</span>), as deki-fsm does.</li>
-<li>Particles are drawn the right way up. A particle that moved up in the world was drawn moving down, so a fountain sprayed toward the ground.</li>
-</ul>
 <p>Earlier releases: <a href="https://github.com/dekiengine/deki-particles/blob/master/CHANGELOG.md">CHANGELOG.md</a>.</p>
 <hr  />
-<p>Generated from the package's reflection data (engine 0.19.0). Property names are the keys used in scene files. Renames keep an alias (<a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">compatibility</a>). </p>
+<p>Generated from the package's reflection data (engine 0.20.2). Property names are the keys used in scene files. Renames keep an alias (<a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">compatibility</a>). </p>
 </div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"></a>
 </div><!-- contents -->
