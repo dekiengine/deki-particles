@@ -8,6 +8,13 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
+## Unreleased
+
+### Added
+- The particle pass says where it draws (deki-rendering's
+  redraw-only-what-changed): each emitter's live particles, where they were
+  and where they are (`ParticleEmitterComponent::ScreenBox`).
+
 ## 0.20.0
 
 ### Changed

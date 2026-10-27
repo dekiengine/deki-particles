@@ -10,6 +10,7 @@
 #include "deki-rendering/QuadBlit.h"
 #include "deki-rendering/DekiRenderer.h"
 #include "deki-rendering/DekiRenderPassRegistry.h"
+#include "deki-rendering/DirtyRegion.h"
 #include "deki-rendering/RenderPass.h"
 #include <deki/Engine.h>  // Deki::ColorFormat
 #include <algorithm>
@@ -17,6 +18,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
+#include <unordered_map>
 
 namespace DekiParticles
 {
@@ -540,6 +542,71 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
     }
 }
 
+void ParticleEmitterComponent::ScreenBox(const Deki::Object* owner, const DekiRendering::RenderContext& ctx,
+                                         Deki::Rect& out)
+{
+    out = Deki::Rect{};
+    Deki2D::Sprite* spr = sprite.Get();
+    const int n = pool.AliveCount();
+    if (!spr || !spr->data || n <= 0 || !owner || !ctx.cam.valid)
+    {
+        return;
+    }
+
+    // Placed as DrawParticles places them, each within its sprite's half
+    // diagonal at its scale (any rotation), plus a pixel for rounding.
+    const DekiRendering::FrameCamera& cam = ctx.cam;
+    const Deki::WorldTransform wt = owner->GetWorldTransform();
+    float anchorX, anchorY;
+    AnchorFor(owner, anchorX, anchorY);
+    float originX, originY;
+    cam.WorldToScreen(wt.x, wt.y, originX, originY);
+    const float cosR = std::cos(wt.rotation);
+    const float sinR = std::sin(wt.rotation);
+    const float ppm = cam.ppm;
+    const float toSprite = ppm / SpritePpm(spr);
+    const float halfDiagonal =
+        0.5f * std::sqrt(static_cast<float>(spr->width) * spr->width + static_cast<float>(spr->height) * spr->height);
+    const float emitterScale = std::max(std::abs(wt.scaleX), std::abs(wt.scaleY));
+    const float snapReach = static_cast<float>(cam.snapStep);
+    const bool hasScale = pool.HasScale();
+    const bool hasTint = pool.HasTint();
+    const float* px = pool.posX.Data();
+    const float* py = pool.posY.Data();
+    const float* ps = pool.scale.Data();
+
+    float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
+    for (int i = 0; i < n; ++i)
+    {
+        if (hasTint && pool.tintA[i] == 0)
+        {
+            continue;
+        }
+        const float s = hasScale ? ps[i] : 1.0f;
+        const float ox = (px[i] - anchorX) * wt.scaleX;
+        const float oy = (py[i] - anchorY) * wt.scaleY;
+        const float screenX = originX + (ox * cosR - oy * sinR) * ppm;
+        const float screenY = originY - (ox * sinR + oy * cosR) * ppm;
+        const float reach = halfDiagonal * std::abs(s) * emitterScale * toSprite + 2.0f + snapReach;
+        minX = std::min(minX, screenX - reach);
+        minY = std::min(minY, screenY - reach);
+        maxX = std::max(maxX, screenX + reach);
+        maxY = std::max(maxY, screenY + reach);
+    }
+    if (minX > maxX)
+    {
+        return;
+    }
+    out.left = std::max<int32_t>(0, static_cast<int32_t>(std::floor(std::max(minX, -1e6f))));
+    out.top = std::max<int32_t>(0, static_cast<int32_t>(std::floor(std::max(minY, -1e6f))));
+    out.right = std::min(ctx.width, static_cast<int32_t>(std::ceil(std::min(maxX, 1e6f))) + 1);
+    out.bottom = std::min(ctx.height, static_cast<int32_t>(std::ceil(std::min(maxY, 1e6f))) + 1);
+    if (out.Empty())
+    {
+        out = Deki::Rect{};
+    }
+}
+
 // Draws each emitter's particles when the renderer reaches it in sort order.
 // Attached whenever this package is loaded (autoAttach), like the tilemap
 // pass, so no project has to name it in its render pipeline.
@@ -562,6 +629,57 @@ public:
             emitter->DrawParticles(obj, ctx);
         }
     }
+
+    // Live particles move every frame: where they were and where they are.
+    bool ReportsChanges() const override { return true; }
+
+    void AddChanges(Deki::Object* obj, const DekiRendering::RenderContext& ctx,
+                    DekiRendering::DirtyRegion& changed) override
+    {
+        auto* emitter = obj->GetComponent<ParticleEmitterComponent>();
+        if (!emitter)
+        {
+            return;
+        }
+        Deki::Rect box;
+        emitter->ScreenBox(obj, ctx, box);
+        Drawn& drawn = m_Drawn[emitter];
+        changed.Add(drawn.box);
+        changed.Add(box);
+        drawn.box = box;
+        drawn.seen = m_Call;
+    }
+
+    void FinishChanges(const DekiRendering::RenderContext& ctx, DekiRendering::DirtyRegion& changed) override
+    {
+        (void)ctx;
+        // An emitter no longer drawn leaves its last particles behind.
+        for (auto it = m_Drawn.begin(); it != m_Drawn.end();)
+        {
+            if (it->second.seen != m_Call)
+            {
+                changed.Add(it->second.box);
+                it = m_Drawn.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+        if (++m_Call == 0)
+        {
+            m_Call = 1;
+        }
+    }
+
+private:
+    struct Drawn
+    {
+        Deki::Rect box{};
+        uint32_t seen = 0;
+    };
+    std::unordered_map<const ParticleEmitterComponent*, Drawn> m_Drawn;
+    uint32_t m_Call = 1;
 };
 
 static struct ParticleRenderPassRegistrar

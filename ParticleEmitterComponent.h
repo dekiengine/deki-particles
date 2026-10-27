@@ -4,6 +4,7 @@
 #include "deki-rendering/RendererComponent.h"
 #include "deki-2d/Sprite.h"
 #include <deki/assets/AssetRef.h>
+#include <deki/providers/Rect.h>
 #include <deki/reflection/Property.h>
 #include "ParticlePool.h"
 #include "ParticleMath.h"
@@ -112,6 +113,10 @@ public:
     /// the current clip (unless ignoreClip). Called by the particle render
     /// pass when the renderer reaches this emitter.
     void DrawParticles(const Deki::Object* owner, DekiRendering::RenderContext& ctx);
+
+    /// The pixels of ctx's view DrawParticles can write this frame, from
+    /// where each live particle is placed: empty when none is.
+    void ScreenBox(const Deki::Object* owner, const DekiRendering::RenderContext& ctx, Deki::Rect& out);
 
     // Public so modifiers' inner loops can use them directly, without accessors.
     DekiParticles::ParticlePool pool;
