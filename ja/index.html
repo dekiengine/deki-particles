@@ -57,7 +57,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">deki-particles<span id="projectnumber">&#160;0.20.2</span>
+   <div id="projectname">deki-particles<span id="projectnumber">&#160;0.21.0</span>
    </div>
    <div id="projectbrief">Deki パッケージリファレンス</div>
   </td>
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('index.html',''
 <img src="deki-particles.png" alt=""/>
 </div>
     <p>モジュール式のパーティクルシステム。点／円／矩形の放出形状、重力、抵抗（ドラッグ）、初速度、そして寿命・サイズ・色・回転のモディファイアを備えます。</p>
-<p>リポジトリ: <a href="https://github.com/dekiengine/deki-particles">github.com/dekiengine/deki-particles</a> · 最新リリース: 0.20.0 · エンジン 0.20.0 以降が必要 · 依存: <a href="https://dekiengine.github.io/deki-nodegraph/ja/">deki-nodegraph</a>, <a href="https://dekiengine.github.io/deki-rendering/ja/">deki-rendering</a>, <a href="https://dekiengine.github.io/deki-2d/ja/">deki-2d</a></p>
+<p>リポジトリ: <a href="https://github.com/dekiengine/deki-particles">github.com/dekiengine/deki-particles</a> · 最新リリース: 0.21.0 · エンジン 0.21.0 以降が必要 · 依存: <a href="https://dekiengine.github.io/deki-nodegraph/ja/">deki-nodegraph</a>, <a href="https://dekiengine.github.io/deki-rendering/ja/">deki-rendering</a>, <a href="https://dekiengine.github.io/deki-2d/ja/">deki-2d</a></p>
 <p><span class="tt">DekiEditor --packages-add deki-particles &lt;project&gt;</span> か、パッケージマネージャーからインストールします。エンジン自身のコンポーネントと C++ API は <a href="https://dekiengine.github.io/docs/ja/">Deki のドキュメント</a>にあります。</p>
 <p>エディターでは <b>Particles</b> と表示されます。</p>
 <h1 class="doxsection"><a class="anchor" id="components"></a>
@@ -164,30 +164,29 @@ ParticleEmitterComponent</h2>
 変更履歴</h1>
 <p>変更履歴は英語です。</p>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md0"></a>
-0.20.0</h2>
+0.21.0</h2>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md1"></a>
+Added</h2>
+<ul>
+<li>The particle pass says where it draws (deki-rendering's redraw-only-what-changed): each emitter's live particles, where they were and where they are (<span class="tt">ParticleEmitterComponent::ScreenBox</span>).</li>
+</ul>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
+Changed</h2>
+<ul>
+<li><span class="tt">minEngine</span> 0.21.0: built against engine 0.21.0. A build of this package from before does not load and is rebuilt.</li>
+</ul>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
+0.20.0</h2>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
 Changed</h2>
 <ul>
 <li><span class="tt">minEngine</span> 0.20.0: built against engine 0.20.0. A build of this package from before does not load and is rebuilt.</li>
 <li>Particles are drawn straight into the frame instead of through a composite, and in strips of rows or columns like everything else.</li>
 <li>The particle pass runs in a strip only for the objects with an emitter (<span class="tt">RenderPass::WantsObject</span>).</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
-0.19.0</h2>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
-Changed</h2>
-<ul>
-<li><span class="tt">minEngine</span> 0.19.0: built against engine 0.19.0, whose component metadata records the package each class is in. A build of this package from before does not load and is rebuilt.</li>
-</ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
-Added</h2>
-<ul>
-<li>Japanese, Simplified Chinese and Korean: <span class="tt">editor/lang/ja.json</span>, <span class="tt">zh.json</span> and <span class="tt">ko.json</span> translate the names, tooltips and enum values this package's components show in the Inspector.</li>
-<li>The package's editor text goes through the editor's translation (<span class="tt">Tr</span>), so it shows in the editor's language. Needs the editor release that adds <span class="tt">Localization.h</span>; raise <span class="tt">minEngine</span> to it when releasing.</li>
-</ul>
 <p>それ以前のリリース: <a href="https://github.com/dekiengine/deki-particles/blob/master/CHANGELOG.md">CHANGELOG.md</a></p>
 <hr  />
-<p>パッケージのリフレクションデータから生成しています (エンジン 0.20.2)。プロパティ名はシーンファイルで使われるキーです。名前を変えても別名が残ります (<a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">互換性</a>)。 </p>
+<p>パッケージのリフレクションデータから生成しています (エンジン 0.21.0)。プロパティ名はシーンファイルで使われるキーです。名前を変えても別名が残ります (<a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">互換性</a>)。 </p>
 </div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"></a>
 </div><!-- contents -->

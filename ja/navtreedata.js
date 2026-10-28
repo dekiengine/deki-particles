@@ -31,11 +31,11 @@ var NAVTREE =
       [ "ParticleEmitterComponent", "index.html#c-particleemittercomponent", null ]
     ] ],
     [ "変更履歴", "index.html#changelog", [
-      [ "0.20.0", "index.html#autotoc_md0", null ],
-      [ "Changed", "index.html#autotoc_md1", null ],
-      [ "0.19.0", "index.html#autotoc_md2", null ],
-      [ "Changed", "index.html#autotoc_md3", null ],
-      [ "Added", "index.html#autotoc_md4", null ]
+      [ "0.21.0", "index.html#autotoc_md0", null ],
+      [ "Added", "index.html#autotoc_md1", null ],
+      [ "Changed", "index.html#autotoc_md2", null ],
+      [ "0.20.0", "index.html#autotoc_md3", null ],
+      [ "Changed", "index.html#autotoc_md4", null ]
     ] ]
   ] ]
 ];
