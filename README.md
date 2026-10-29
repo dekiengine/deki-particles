@@ -52,6 +52,10 @@ From any package or the project DLL, with no change to deki-particles:
 | `deki-rendering` | Deki package |
 | `deki-2d` | Deki package |
 
+## Community
+
+Questions, ideas and what you made with Deki: [the Deki Discord](https://dekiengine.com/discord/).
+
 ## License
 
 Apache 2.0. See [LICENSE](LICENSE).
