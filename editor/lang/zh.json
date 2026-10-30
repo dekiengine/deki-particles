@@ -81,5 +81,8 @@
     "Spin Speed At 0": "0 时的自转速度",
     "Spin Speed At 1": "1 时的自转速度",
     "Particles": "粒子",
-    "Spawns and draws particles, following a particle graph asset.": "按照粒子图资源生成并绘制粒子。"
+    "Spawns and draws particles, following a particle graph asset.": "按照粒子图资源生成并绘制粒子。",
+    "Nodes": "节点",
+    "Edit the effect's nodes in the Node Graph window.": "在节点图窗口中编辑效果的节点。",
+    "Open in Node Graph": "在节点图中打开"
 }

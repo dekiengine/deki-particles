@@ -81,5 +81,8 @@
     "Spin Speed At 0": "시작 회전 속도",
     "Spin Speed At 1": "종료 회전 속도",
     "Particles": "파티클",
-    "Spawns and draws particles, following a particle graph asset.": "파티클 그래프 에셋에 따라 파티클을 생성하고 그립니다."
+    "Spawns and draws particles, following a particle graph asset.": "파티클 그래프 에셋에 따라 파티클을 생성하고 그립니다.",
+    "Nodes": "노드",
+    "Edit the effect's nodes in the Node Graph window.": "효과의 노드는 노드 그래프 창에서 편집합니다.",
+    "Open in Node Graph": "노드 그래프에서 열기"
 }

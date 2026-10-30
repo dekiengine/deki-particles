@@ -9,9 +9,14 @@
 
 #ifdef DEKI_EDITOR
 
+#include <deki-editor/EditorApplication.h>
 #include <deki-editor/EditorExtension.h>
 #include <deki-editor/EditorRegistry.h>
+#include <deki-editor/EditorUI.h>
 #include <deki-editor/Localization.h>
+#include <nlohmann/json.hpp>
+
+#include <cstdio>
 
 #include "deki-nodegraph/DekiNode.h"
 #include "ParticleGraph.h"
@@ -48,6 +53,26 @@ public:
     }
 
     int GetCompileTarget() const override { return 2; }  // Data
+
+    // The effect is edited in the Node Graph window; the inspector says how
+    // big the graph is and opens it there.
+    bool OnInspectorGUI(std::string& jsonData, const std::string& assetPath, const std::string&) override
+    {
+        auto& ui = EditorUI::Get();
+        const nlohmann::json graph = nlohmann::json::parse(jsonData, nullptr, false);
+        const size_t nodes =
+            graph.is_object() && graph.contains("nodes") && graph["nodes"].is_array() ? graph["nodes"].size() : 0;
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%zu", nodes);
+        ui.PropertyRow("Nodes");
+        ui.ValueText(buf);
+        ui.Hint(Tr("Edit the effect's nodes in the Node Graph window."));
+        if (ui.ActionButton(TrLabel("Open in Node Graph")))
+        {
+            EditorApplication::Get().RequestOpenTool(assetPath, /*cachePath*/ "");
+        }
+        return false;
+    }
 };
 
 REGISTER_EDITOR(ParticleGraphAssetEditor)

@@ -8,6 +8,12 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
+## Unreleased
+
+### Changed
+- A particle effect asset's inspector shows its node count and opens it in the
+  Node Graph window; the section was empty.
+
 ## 0.21.0
 
 ### Added

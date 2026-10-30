@@ -81,5 +81,8 @@
     "Spin Speed At 0": "開始時の回転速度",
     "Spin Speed At 1": "終了時の回転速度",
     "Particles": "パーティクル",
-    "Spawns and draws particles, following a particle graph asset.": "パーティクルグラフのアセットに従って、パーティクルを生成して描きます。"
+    "Spawns and draws particles, following a particle graph asset.": "パーティクルグラフのアセットに従って、パーティクルを生成して描きます。",
+    "Nodes": "ノード",
+    "Edit the effect's nodes in the Node Graph window.": "エフェクトのノードはノードグラフウィンドウで編集します。",
+    "Open in Node Graph": "ノードグラフで開く"
 }
