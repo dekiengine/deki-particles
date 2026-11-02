@@ -438,6 +438,9 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
     QuadBlit::Source src = QuadBlit::MakeSource(spr->data, spr->width, spr->height,
                                                 QuadBlit::PixelLayout::FromTexture(spr->format, spr->hasAlpha),
                                                 /*ownsPixels=*/false, spr->alphaRowSpans.Data());
+    // The sprite's own pixels, which stay as they are: a GPU drawing the
+    // particles uploads them once.
+    src.revision = spr->Revision();
     if (spr->hasChromaKey)
     {
         src.hasChromaKey = true;
@@ -616,6 +619,9 @@ public:
     static constexpr const char* kRegistryName = "particles";
 
     uint32_t HookMask() const override { return DekiRendering::RenderPassHooks::Execute; }
+
+    // Every particle is a QuadBlit blit.
+    bool WritesBuffer() const override { return false; }
 
     bool WantsObject(Deki::Object* obj) const override
     {

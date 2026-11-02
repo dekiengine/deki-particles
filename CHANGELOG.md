@@ -8,6 +8,14 @@ breaking change bumps the minor across the editor, the engine and every
 package together, so a package with no changes of its own is still released
 alongside one that has them.
 
+## Unreleased
+
+### Added
+- Particles carry their sprite's revision (`QuadBlit::Source::revision`), so a
+  GPU drawing the 2D (`deki-gl`) uploads the sprite once, and the particle
+  pass says it writes nothing into the frame buffer itself
+  (`RenderPass::WritesBuffer`), so it costs nothing extra there.
+
 ## 0.22.0
 
 ### Changed
