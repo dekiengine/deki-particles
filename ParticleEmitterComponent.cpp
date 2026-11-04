@@ -441,6 +441,7 @@ void ParticleEmitterComponent::DrawParticles(const Deki::Object* owner, DekiRend
     // The sprite's own pixels, which stay as they are: a GPU drawing the
     // particles uploads them once.
     src.revision = spr->Revision();
+    src.filter = spr->filter;
     if (spr->hasChromaKey)
     {
         src.hasChromaKey = true;

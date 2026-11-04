@@ -11,6 +11,8 @@ alongside one that has them.
 ## Unreleased
 
 ### Added
+- Particles carry their sprite's filter (`QuadBlit::Source::filter`), so a GPU
+  draws them as the image's Filter says.
 - Particles carry their sprite's revision (`QuadBlit::Source::revision`), so a
   GPU drawing the 2D (`deki-gl`) uploads the sprite once, and the particle
   pass says it writes nothing into the frame buffer itself
