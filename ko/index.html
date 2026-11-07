@@ -57,7 +57,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">deki-particles<span id="projectnumber">&#160;0.22.0</span>
+   <div id="projectname">deki-particles<span id="projectnumber">&#160;0.30.0</span>
    </div>
    <div id="projectbrief">Deki 패키지 레퍼런스</div>
   </td>
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('index.html',''
 <img src="deki-particles.png" alt=""/>
 </div>
     <p>모듈식 파티클 시스템: 점/원/사각형 방출 형태, 중력, 항력, 초기 속도, 그리고 수명/크기/색상/회전 모디파이어.</p>
-<p>저장소: <a href="https://github.com/dekiengine/deki-particles">github.com/dekiengine/deki-particles</a> · 최신 릴리스: 0.22.0 · 엔진 0.22.0 이상 필요 · 의존: <a href="https://dekiengine.github.io/deki-nodegraph/ko/">deki-nodegraph</a>, <a href="https://dekiengine.github.io/deki-rendering/ko/">deki-rendering</a>, <a href="https://dekiengine.github.io/deki-2d/ko/">deki-2d</a></p>
+<p>저장소: <a href="https://github.com/dekiengine/deki-particles">github.com/dekiengine/deki-particles</a> · 최신 릴리스: 0.30.0 · 엔진 0.30.0 이상 필요 · 의존: <a href="https://dekiengine.github.io/deki-nodegraph/ko/">deki-nodegraph</a>, <a href="https://dekiengine.github.io/deki-rendering/ko/">deki-rendering</a>, <a href="https://dekiengine.github.io/deki-2d/ko/">deki-2d</a></p>
 <p><span class="tt">DekiEditor --packages-add deki-particles &lt;project&gt;</span> 또는 패키지 관리자로 설치합니다. 엔진 자체의 컴포넌트와 C++ API는 <a href="https://dekiengine.github.io/docs/ko/">Deki 문서</a>에 있습니다.</p>
 <p>에디터에는 <b>Particles</b>(으)로 표시됩니다.</p>
 <h1 class="doxsection"><a class="anchor" id="components"></a>
@@ -164,28 +164,29 @@ ParticleEmitterComponent</h2>
 변경 내역</h1>
 <p>변경 내역은 영어로 되어 있습니다.</p>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md0"></a>
-0.22.0</h2>
+0.30.0</h2>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md1"></a>
+Changed</h2>
+<ul>
+<li><span class="tt">minEngine</span> 0.30.0: built against engine 0.30.0. A build of this package from before does not load and is rebuilt.</li>
+</ul>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
+Added</h2>
+<ul>
+<li>Particles carry their sprite's filter (<span class="tt">QuadBlit::Source::filter</span>), so a GPU draws them as the image's Filter says.</li>
+<li>Particles carry their sprite's revision (<span class="tt">QuadBlit::Source::revision</span>), so a GPU drawing the 2D (<span class="tt">deki-gl</span>) uploads the sprite once, and the particle pass says it writes nothing into the frame buffer itself (<span class="tt">RenderPass::WritesBuffer</span>), so it costs nothing extra there.</li>
+</ul>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
+0.22.0</h2>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
 Changed</h2>
 <ul>
 <li>A particle effect asset's inspector shows its node count and opens it in the Node Graph window; the section was empty.</li>
 <li><span class="tt">minEngine</span> 0.22.0: built against engine 0.22.0. A build of this package from before does not load and is rebuilt.</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
-0.21.0</h2>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
-Added</h2>
-<ul>
-<li>The particle pass says where it draws (deki-rendering's redraw-only-what-changed): each emitter's live particles, where they were and where they are (<span class="tt">ParticleEmitterComponent::ScreenBox</span>).</li>
-</ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
-Changed</h2>
-<ul>
-<li><span class="tt">minEngine</span> 0.21.0: built against engine 0.21.0. A build of this package from before does not load and is rebuilt.</li>
-</ul>
 <p>이전 릴리스: <a href="https://github.com/dekiengine/deki-particles/blob/master/CHANGELOG.md">CHANGELOG.md</a></p>
 <hr  />
-<p>패키지의 리플렉션 데이터에서 생성했습니다(엔진 0.22.0). 속성 이름은 씬 파일에서 쓰는 키입니다. 이름을 바꿔도 별칭이 유지됩니다(<a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">호환성</a>). </p>
+<p>패키지의 리플렉션 데이터에서 생성했습니다(엔진 0.30.0). 속성 이름은 씬 파일에서 쓰는 키입니다. 이름을 바꿔도 별칭이 유지됩니다(<a href="https://github.com/dekiengine/deki-editor/blob/master/COMPATIBILITY.md">호환성</a>). </p>
 </div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"></a>
 </div><!-- contents -->
