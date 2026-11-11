@@ -23,7 +23,7 @@ public:
     void UnregisterEmitter(ParticleEmitterComponent* emitter);
     void ClearAll();
 
-    int EmitterCount() const { return (int)m_Emitters.size(); }
+    int EmitterCount() const { return static_cast<int>(m_Emitters.size()); }
 
 private:
     ParticleSystem() = default;

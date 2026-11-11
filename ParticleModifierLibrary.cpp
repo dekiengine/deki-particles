@@ -300,10 +300,10 @@ void ColorOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitte
     uint8_t* tA = emitter.pool.tintA.Data();
 
     int r0 = d->colorAt0.r, g0 = d->colorAt0.g, b0 = d->colorAt0.b, a0 = d->colorAt0.a;
-    int dr = (int)d->colorAt1.r - r0;
-    int dg = (int)d->colorAt1.g - g0;
-    int db = (int)d->colorAt1.b - b0;
-    int da = (int)d->colorAt1.a - a0;
+    int dr = static_cast<int>(d->colorAt1.r) - r0;
+    int dg = static_cast<int>(d->colorAt1.g) - g0;
+    int db = static_cast<int>(d->colorAt1.b) - b0;
+    int da = static_cast<int>(d->colorAt1.a) - a0;
     // 256 in float for the 8.8 lerp factor.
     static const float k256 = 256.0f;
 
@@ -317,10 +317,10 @@ void ColorOverLifetimeSimulate(const void* data, void* /*state*/, ParticleEmitte
         // 8.8 fixed-point lerp, which keeps float-to-int conversions out of
         // the loop on MCUs where they are slow.
         int ti = static_cast<int>(t * k256);
-        tR[i] = (uint8_t)(r0 + ((dr * ti) >> 8));
-        tG[i] = (uint8_t)(g0 + ((dg * ti) >> 8));
-        tB[i] = (uint8_t)(b0 + ((db * ti) >> 8));
-        tA[i] = (uint8_t)(a0 + ((da * ti) >> 8));
+        tR[i] = static_cast<uint8_t>(r0 + ((dr * ti) >> 8));
+        tG[i] = static_cast<uint8_t>(g0 + ((dg * ti) >> 8));
+        tB[i] = static_cast<uint8_t>(b0 + ((db * ti) >> 8));
+        tA[i] = static_cast<uint8_t>(a0 + ((da * ti) >> 8));
     }
 }
 

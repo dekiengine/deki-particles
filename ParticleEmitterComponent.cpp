@@ -25,7 +25,7 @@ namespace DekiParticles
 
 ParticleEmitterComponent::ParticleEmitterComponent()
 {
-    rng.Seed((uint32_t)(uintptr_t)this);
+    rng.Seed(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
 }
 
 ParticleEmitterComponent::~ParticleEmitterComponent()
